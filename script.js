@@ -22,4 +22,14 @@ document.addEventListener('DOMContentLoaded', function(){
       }
     });
   });
+
+  var themeBtn = document.querySelector('.theme-toggle');
+  if(themeBtn){
+    themeBtn.addEventListener('click', function(){
+      var current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+      var next = current === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      try{ localStorage.setItem('theme', next); }catch(e){}
+    });
+  }
 });
