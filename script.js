@@ -99,4 +99,61 @@ document.addEventListener('DOMContentLoaded', function(){
     });
     updateProgress();
   }
+
+  function showToast(msg){
+    var toast = document.querySelector('.site-toast');
+    if(!toast){
+      toast = document.createElement('div');
+      toast.className = 'site-toast';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    requestAnimationFrame(function(){ toast.classList.add('show'); });
+    clearTimeout(toast._hideTimer);
+    toast._hideTimer = setTimeout(function(){ toast.classList.remove('show'); }, 2400);
+  }
+
+  var langToggle = document.querySelector('.lang-toggle');
+  var langMenu = document.querySelector('.lang-menu');
+  if(langToggle && langMenu){
+    langToggle.addEventListener('click', function(e){
+      e.stopPropagation();
+      langMenu.classList.toggle('open');
+    });
+    langMenu.querySelectorAll('button').forEach(function(btn){
+      if(btn.dataset.lang === 'ar') btn.classList.add('active-lang');
+      btn.addEventListener('click', function(){
+        langMenu.classList.remove('open');
+        if(btn.dataset.lang === 'ar'){
+          return;
+        }
+        showToast('نسخة الموقع بلغة ' + btn.textContent + ' هتتوفر قريبًا');
+      });
+    });
+    document.addEventListener('click', function(e){
+      if(!langMenu.contains(e.target) && e.target !== langToggle){
+        langMenu.classList.remove('open');
+      }
+    });
+  }
+
+  function updateAuthUI(){
+    var state = (function(){ try{ return localStorage.getItem('authState') || 'out'; }catch(e){ return 'out'; } })();
+    document.querySelectorAll('.auth-link').forEach(function(link){
+      link.style.display = (link.dataset.authState === state) ? '' : 'none';
+    });
+  }
+  updateAuthUI();
+
+  document.querySelectorAll('.auth-link[data-auth-state="in"]').forEach(function(link){
+    link.addEventListener('click', function(e){
+      e.preventDefault();
+      try{ localStorage.setItem('authState', 'out'); }catch(err){}
+      updateAuthUI();
+      showToast('تم تسجيل الخروج بنجاح');
+      if(window.location.pathname.indexOf('mycourses.html') !== -1){
+        setTimeout(function(){ window.location.href = 'index.html'; }, 900);
+      }
+    });
+  });
 });
