@@ -1,9 +1,34 @@
 document.addEventListener('DOMContentLoaded', function(){
   var toggle = document.querySelector('.menu-toggle');
   var links = document.querySelector('nav.links');
+  var backdrop = document.querySelector('.nav-backdrop');
+
+  function openMenu(){
+    links.classList.add('open');
+    if(backdrop) backdrop.classList.add('open');
+    document.body.classList.add('menu-open');
+  }
+  function closeMenu(){
+    links.classList.remove('open');
+    if(backdrop) backdrop.classList.remove('open');
+    document.body.classList.remove('menu-open');
+  }
+
   if(toggle && links){
     toggle.addEventListener('click', function(){
-      links.classList.toggle('open');
+      if(links.classList.contains('open')) closeMenu();
+      else openMenu();
+    });
+    links.querySelectorAll('a').forEach(function(a){
+      a.addEventListener('click', function(){
+        closeMenu();
+      });
+    });
+    if(backdrop){
+      backdrop.addEventListener('click', closeMenu);
+    }
+    window.addEventListener('resize', function(){
+      if(window.innerWidth > 860) closeMenu();
     });
   }
 
@@ -116,15 +141,32 @@ document.addEventListener('DOMContentLoaded', function(){
   var langToggle = document.querySelector('.lang-toggle');
   var langMenu = document.querySelector('.lang-menu');
   if(langToggle && langMenu){
+    var enMap = {
+      'index.html':'index-en.html', 'courses.html':'courses-en.html',
+      'books.html':'books-en.html', 'about.html':'about-en.html',
+      'contact.html':'contact-en.html', 'login.html':'index-en.html',
+      'mycourses.html':'index-en.html', '':'index-en.html'
+    };
+    var arMap = {
+      'index-en.html':'index.html', 'courses-en.html':'courses.html',
+      'books-en.html':'books.html', 'about-en.html':'about.html',
+      'contact-en.html':'contact.html', '':'index.html'
+    };
+    var currentLang = document.documentElement.lang === 'en' ? 'en' : 'ar';
+
     langToggle.addEventListener('click', function(e){
       e.stopPropagation();
       langMenu.classList.toggle('open');
     });
     langMenu.querySelectorAll('button').forEach(function(btn){
-      if(btn.dataset.lang === 'ar') btn.classList.add('active-lang');
+      if(btn.dataset.lang === currentLang) btn.classList.add('active-lang');
       btn.addEventListener('click', function(){
         langMenu.classList.remove('open');
-        if(btn.dataset.lang === 'ar'){
+        if(btn.dataset.lang === currentLang) return;
+        if(btn.dataset.lang === 'en' || btn.dataset.lang === 'ar'){
+          var current = window.location.pathname.split('/').pop();
+          var target = (btn.dataset.lang === 'en') ? (enMap[current] || 'index-en.html') : (arMap[current] || 'index.html');
+          window.location.href = target;
           return;
         }
         showToast('نسخة الموقع بلغة ' + btn.textContent + ' هتتوفر قريبًا');
