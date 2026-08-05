@@ -6,6 +6,7 @@
 <title>كورساتي | م. محمود وليد</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
   try{
@@ -84,14 +85,14 @@
 <div class="page-head wrap">
   <p class="eyebrow">مساحتك الخاصة</p>
   <h1>كورساتي</h1>
-  <p>هنا هتلاقي كل الكورسات والكتب اللي اشتريتها، وتقدر تكمل منها في أي وقت.</p>
+  <p>هنا هتلاقي كل الكورسات والكتب المتاحة دلوقتي، ولما تشتري أي حاجة هتلاقيها في حسابك بعد التفعيل.</p>
 </div>
 
 <section style="padding-top:10px;">
   <div class="wrap">
     <div id="mc-locked" style="display:none;">
       <div class="cta-band">
-        <h3>سجّل دخولك الأول عشان تشوف كورساتك</h3>
+        <h3>سجّل دخولك عشان تتابع الكورسات اللي اشتريتها</h3>
         <a href="login.html" class="btn btn-solid">تسجيل الدخول</a>
       </div>
     </div>
@@ -102,14 +103,40 @@
         <h2>لسه محضرش كورسات مسجلة</h2>
         <p>لما تشتري أي كورس أو كتاب، هيظهر هنا تلقائيًا. لحد ما نفعّل الدفع الأونلاين، التسليم بيتم يدويًا على واتساب أو الإيميل بعد التحويل.</p>
       </div>
-      <div class="btn-row">
-        <a href="courses.html" class="btn btn-solid">تصفح الكورسات</a>
-        <a href="books.html" class="btn btn-outline">تصفح الكتب</a>
-      </div>
-      <p style="margin-top:26px;">
+      <p style="margin-top:10px;">
         <a href="#" id="mc-logout" style="color:var(--rust); font-weight:700; font-size:.9rem;">تسجيل الخروج</a>
       </p>
     </div>
+  </div>
+</section>
+
+<section style="padding-top:10px;">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">كل اللي متاح دلوقتي</p>
+      <h2>الكورسات</h2>
+    </div>
+    <div id="mc-courses-grid" class="grid-3">
+      <div class="card"><div class="card-top"></div><div class="card-body"><div class="skeleton-line" style="height:16px; width:70%;"></div><div class="skeleton-line" style="height:12px; width:100%; margin-top:10px;"></div></div></div>
+      <div class="card"><div class="card-top"></div><div class="card-body"><div class="skeleton-line" style="height:16px; width:70%;"></div><div class="skeleton-line" style="height:12px; width:100%; margin-top:10px;"></div></div></div>
+      <div class="card"><div class="card-top"></div><div class="card-body"><div class="skeleton-line" style="height:16px; width:70%;"></div><div class="skeleton-line" style="height:12px; width:100%; margin-top:10px;"></div></div></div>
+    </div>
+    <p id="mc-courses-empty" style="display:none; color:var(--ink-soft); font-size:.9rem;">مفيش كورسات مضافة دلوقتي، تابعنا قريبًا.</p>
+  </div>
+</section>
+
+<section style="padding-top:0;">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">للقراءة والتطبيق</p>
+      <h2>الكتب الإلكترونية</h2>
+    </div>
+    <div id="mc-books-grid" class="grid-3">
+      <div class="card"><div class="book-shelf"></div><div class="card-body"><div class="skeleton-line" style="height:16px; width:70%;"></div><div class="skeleton-line" style="height:12px; width:100%; margin-top:10px;"></div></div></div>
+      <div class="card"><div class="book-shelf"></div><div class="card-body"><div class="skeleton-line" style="height:16px; width:70%;"></div><div class="skeleton-line" style="height:12px; width:100%; margin-top:10px;"></div></div></div>
+      <div class="card"><div class="book-shelf"></div><div class="card-body"><div class="skeleton-line" style="height:16px; width:70%;"></div><div class="skeleton-line" style="height:12px; width:100%; margin-top:10px;"></div></div></div>
+    </div>
+    <p id="mc-books-empty" style="display:none; color:var(--ink-soft); font-size:.9rem;">مفيش كتب مضافة دلوقتي، تابعنا قريبًا.</p>
   </div>
 </section>
 
@@ -126,6 +153,80 @@
       window.location.href = 'index.html';
     });
   }
+})();
+
+(function(){
+  var SUPABASE_URL = 'https://cayfcvkqjrphbshdysnb.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_4QWsFfheXQVs6lH0-tbwDw_JYr3p1Mr';
+  var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  function escapeHtml(str){
+    return (str == null ? '' : String(str))
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  var bookPalette = [
+    ['var(--rust)', '#8a4a1f'],
+    ['var(--teal)', '#1c2450'],
+    ['var(--gold)', '#3a2f7a']
+  ];
+
+  function courseCardHtml(item){
+    var img = item.image_url
+      ? '<img src="' + escapeHtml(item.image_url) + '" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display=\'none\'">'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="#EDEBFF" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5"/></svg>';
+    var price = (item.price != null && item.price !== '') ? item.price + ' <small>جنيه</small>' : 'يتواصل معانا';
+    return '<div class="card">' +
+      '<div class="card-top">' + img + '</div>' +
+      '<div class="card-body">' +
+        '<h3>' + escapeHtml(item.title) + '</h3>' +
+        '<p>' + escapeHtml(item.description || '') + '</p>' +
+        '<div class="price-row"><span class="price">' + price + '</span>' +
+        '<a href="contact.html" class="mini-btn">اطلب الآن</a></div>' +
+      '</div></div>';
+  }
+
+  function bookCardHtml(item, idx){
+    var colors = bookPalette[idx % bookPalette.length];
+    var price = (item.price != null && item.price !== '') ? item.price + ' <small>جنيه</small>' : 'يتواصل معانا';
+    return '<div class="card">' +
+      '<div class="book-shelf"><div class="book" style="background:linear-gradient(160deg,' + colors[0] + ',' + colors[1] + ');">' +
+        '<span class="b-kicker">كتاب إلكتروني</span>' +
+        '<span class="b-title">' + escapeHtml(item.title) + '</span>' +
+        '<span class="b-author">م. محمود وليد</span>' +
+      '</div></div>' +
+      '<div class="card-body">' +
+        '<h3>' + escapeHtml(item.title) + '</h3>' +
+        '<p>' + escapeHtml(item.description || '') + '</p>' +
+        '<div class="price-row"><span class="price">' + price + '</span>' +
+        '<a href="contact.html" class="mini-btn">اطلب الآن</a></div>' +
+      '</div></div>';
+  }
+
+  function loadCatalog(table, gridId, emptyId, cardFn){
+    var grid = document.getElementById(gridId);
+    var emptyEl = document.getElementById(emptyId);
+    sb.from(table).select('*').order('created_at', { ascending: false }).then(function(res){
+      if(res.error){
+        grid.innerHTML = '';
+        emptyEl.style.display = 'block';
+        emptyEl.textContent = 'تعذر تحميل البيانات دلوقتي، حاول تاني بعدين.';
+        console.error(table + ' load error:', res.error);
+        return;
+      }
+      var items = res.data || [];
+      if(items.length === 0){
+        grid.innerHTML = '';
+        emptyEl.style.display = 'block';
+        return;
+      }
+      emptyEl.style.display = 'none';
+      grid.innerHTML = items.map(cardFn).join('');
+    });
+  }
+
+  loadCatalog('courses', 'mc-courses-grid', 'mc-courses-empty', courseCardHtml);
+  loadCatalog('books', 'mc-books-grid', 'mc-books-empty', function(item, idx){ return bookCardHtml(item, idx); });
 })();
 </script>
 

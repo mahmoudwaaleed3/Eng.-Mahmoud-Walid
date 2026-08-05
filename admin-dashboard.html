@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>لوحة تحكم الأدمن | العملاء</title>
+<title>لوحة تحكم الأدمن</title>
 <meta name="robots" content="noindex, nofollow">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -13,11 +13,13 @@
   body{font-family:'Cairo',sans-serif;}
   .skeleton{background:linear-gradient(90deg,#1e293b 25%,#334155 37%,#1e293b 63%);background-size:400% 100%;animation:shimmer 1.4s ease infinite;}
   @keyframes shimmer{0%{background-position:100% 50%;}100%{background-position:0 50%;}}
+  .tab-btn.active{background:#7C6CF6;color:#fff;}
+  .panel{display:none;}
+  .panel.active{display:block;}
 </style>
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-100">
 
-  <!-- Auth gate -->
   <div id="auth-gate" class="fixed inset-0 bg-slate-950 flex items-center justify-center z-50">
     <p class="text-slate-400 text-sm">جاري التحقق من الدخول...</p>
   </div>
@@ -42,48 +44,158 @@
 
     <main class="max-w-6xl mx-auto px-5 py-6">
 
-      <div class="flex items-center justify-between flex-wrap gap-3 mb-5">
-        <div>
-          <h1 class="text-xl font-bold">بيانات العملاء</h1>
-          <p class="text-sm text-slate-500 mt-0.5"><span id="row-count">0</span> عميل مسجل</p>
-        </div>
-        <div class="flex items-center gap-2">
-          <div class="relative">
-            <input id="search-input" type="text" placeholder="دور بالاسم أو الإيميل أو الرقم..."
-              class="w-64 max-w-full rounded-lg bg-slate-900 border border-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
-          </div>
-          <button id="refresh-btn" class="rounded-lg border border-slate-800 hover:border-slate-700 px-3 py-2 text-sm text-slate-300" title="تحديث">⟳</button>
-        </div>
+      <div class="flex gap-2 mb-6 flex-wrap">
+        <button class="tab-btn active rounded-lg px-4 py-2 text-sm font-semibold border border-slate-800 text-slate-300" data-tab="customers-panel">العملاء</button>
+        <button class="tab-btn rounded-lg px-4 py-2 text-sm font-semibold border border-slate-800 text-slate-300" data-tab="courses-panel">الكورسات</button>
+        <button class="tab-btn rounded-lg px-4 py-2 text-sm font-semibold border border-slate-800 text-slate-300" data-tab="books-panel">الكتب</button>
       </div>
 
       <div id="error-banner" class="hidden mb-4 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300 text-sm px-4 py-3"></div>
 
-      <div class="rounded-xl border border-slate-800 overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead class="bg-slate-900 text-slate-400">
-              <tr>
-                <th class="text-right font-semibold px-4 py-3">الاسم</th>
-                <th class="text-right font-semibold px-4 py-3">الإيميل</th>
-                <th class="text-right font-semibold px-4 py-3">الموبايل</th>
-                <th class="text-right font-semibold px-4 py-3">تاريخ التسجيل</th>
-                <th class="text-right font-semibold px-4 py-3 w-40">إجراءات</th>
-              </tr>
-            </thead>
-            <tbody id="table-body" class="divide-y divide-slate-800"></tbody>
-          </table>
+      <!-- ================= CUSTOMERS PANEL ================= -->
+      <section id="customers-panel" class="panel active">
+        <div class="flex items-center justify-between flex-wrap gap-3 mb-4">
+          <div>
+            <h1 class="text-xl font-bold">بيانات العملاء</h1>
+            <p class="text-sm text-slate-500 mt-0.5"><span id="customers-count">0</span> عميل مسجل</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <input id="customers-search" type="text" placeholder="دور بالاسم أو الإيميل أو الرقم..."
+              class="w-64 max-w-full rounded-lg bg-slate-900 border border-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+            <button id="customers-refresh" class="rounded-lg border border-slate-800 hover:border-slate-700 px-3 py-2 text-sm text-slate-300" title="تحديث">⟳</button>
+          </div>
         </div>
-        <div id="empty-state" class="hidden text-center text-slate-500 text-sm py-14">مفيش عملاء يطابقوا البحث</div>
-      </div>
+
+        <div class="rounded-xl border border-slate-800 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-slate-900 text-slate-400">
+                <tr>
+                  <th class="text-right font-semibold px-4 py-3">الاسم</th>
+                  <th class="text-right font-semibold px-4 py-3">الإيميل</th>
+                  <th class="text-right font-semibold px-4 py-3">الموبايل</th>
+                  <th class="text-right font-semibold px-4 py-3">تاريخ التسجيل</th>
+                  <th class="text-right font-semibold px-4 py-3 w-40">إجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="customers-body" class="divide-y divide-slate-800"></tbody>
+            </table>
+          </div>
+          <div id="customers-empty" class="hidden text-center text-slate-500 text-sm py-14">مفيش عملاء يطابقوا البحث</div>
+        </div>
+      </section>
+
+      <!-- ================= COURSES PANEL ================= -->
+      <section id="courses-panel" class="panel">
+        <div class="flex items-center justify-between flex-wrap gap-3 mb-4">
+          <div>
+            <h1 class="text-xl font-bold">الكورسات</h1>
+            <p class="text-sm text-slate-500 mt-0.5"><span id="courses-count">0</span> كورس</p>
+          </div>
+          <button id="courses-add-toggle" class="rounded-lg bg-gradient-to-l from-violet-500 to-indigo-500 px-4 py-2 text-sm font-semibold">+ إضافة كورس</button>
+        </div>
+
+        <form id="courses-add-form" class="hidden rounded-xl border border-slate-800 bg-slate-900/60 p-5 mb-6 grid gap-3 sm:grid-cols-2">
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold mb-1 text-slate-400">اسم الكورس</label>
+            <input required class="add-title w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm" placeholder="مثال: التسويق بالذكاء الاصطناعي - الجزء الأول">
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold mb-1 text-slate-400">الوصف</label>
+            <textarea class="add-description w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm" rows="2" placeholder="وصف مختصر للكورس"></textarea>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1 text-slate-400">السعر (جنيه)</label>
+            <input required type="number" step="0.01" min="0" class="add-price w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm" placeholder="650">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1 text-slate-400">رابط الصورة</label>
+            <input class="add-image_url w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm" placeholder="https://...">
+          </div>
+          <div class="sm:col-span-2 flex gap-2 justify-end pt-1">
+            <button type="button" class="add-cancel px-4 py-2 rounded-lg text-sm border border-slate-700 text-slate-300 hover:bg-slate-800">إلغاء</button>
+            <button type="submit" class="add-submit px-4 py-2 rounded-lg text-sm bg-violet-500 hover:bg-violet-600 font-semibold">حفظ الكورس</button>
+          </div>
+        </form>
+
+        <div class="rounded-xl border border-slate-800 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-slate-900 text-slate-400">
+                <tr>
+                  <th class="text-right font-semibold px-4 py-3 w-16">صورة</th>
+                  <th class="text-right font-semibold px-4 py-3">الاسم</th>
+                  <th class="text-right font-semibold px-4 py-3">الوصف</th>
+                  <th class="text-right font-semibold px-4 py-3">السعر</th>
+                  <th class="text-right font-semibold px-4 py-3 w-40">إجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="courses-body" class="divide-y divide-slate-800"></tbody>
+            </table>
+          </div>
+          <div id="courses-empty" class="hidden text-center text-slate-500 text-sm py-14">لسه مفيش كورسات مضافة</div>
+        </div>
+      </section>
+
+      <!-- ================= BOOKS PANEL ================= -->
+      <section id="books-panel" class="panel">
+        <div class="flex items-center justify-between flex-wrap gap-3 mb-4">
+          <div>
+            <h1 class="text-xl font-bold">الكتب الإلكترونية</h1>
+            <p class="text-sm text-slate-500 mt-0.5"><span id="books-count">0</span> كتاب</p>
+          </div>
+          <button id="books-add-toggle" class="rounded-lg bg-gradient-to-l from-violet-500 to-indigo-500 px-4 py-2 text-sm font-semibold">+ إضافة كتاب</button>
+        </div>
+
+        <form id="books-add-form" class="hidden rounded-xl border border-slate-800 bg-slate-900/60 p-5 mb-6 grid gap-3 sm:grid-cols-2">
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold mb-1 text-slate-400">اسم الكتاب</label>
+            <input required class="add-title w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm" placeholder="مثال: دليلك الشامل لتسويق منتجك بالذكاء الاصطناعي">
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold mb-1 text-slate-400">الوصف</label>
+            <textarea class="add-description w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm" rows="2" placeholder="وصف مختصر للكتاب"></textarea>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1 text-slate-400">السعر (جنيه)</label>
+            <input required type="number" step="0.01" min="0" class="add-price w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm" placeholder="150">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1 text-slate-400">رابط الصورة</label>
+            <input class="add-image_url w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm" placeholder="https://...">
+          </div>
+          <div class="sm:col-span-2 flex gap-2 justify-end pt-1">
+            <button type="button" class="add-cancel px-4 py-2 rounded-lg text-sm border border-slate-700 text-slate-300 hover:bg-slate-800">إلغاء</button>
+            <button type="submit" class="add-submit px-4 py-2 rounded-lg text-sm bg-violet-500 hover:bg-violet-600 font-semibold">حفظ الكتاب</button>
+          </div>
+        </form>
+
+        <div class="rounded-xl border border-slate-800 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-slate-900 text-slate-400">
+                <tr>
+                  <th class="text-right font-semibold px-4 py-3 w-16">صورة</th>
+                  <th class="text-right font-semibold px-4 py-3">الاسم</th>
+                  <th class="text-right font-semibold px-4 py-3">الوصف</th>
+                  <th class="text-right font-semibold px-4 py-3">السعر</th>
+                  <th class="text-right font-semibold px-4 py-3 w-40">إجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="books-body" class="divide-y divide-slate-800"></tbody>
+            </table>
+          </div>
+          <div id="books-empty" class="hidden text-center text-slate-500 text-sm py-14">لسه مفيش كتب مضافة</div>
+        </div>
+      </section>
 
     </main>
   </div>
 
-  <!-- Delete confirm modal -->
   <div id="delete-modal" class="hidden fixed inset-0 bg-black/60 z-40 flex items-center justify-center px-4">
     <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 max-w-sm w-full">
       <h3 class="font-bold mb-2">تأكيد الحذف</h3>
-      <p class="text-sm text-slate-400 mb-5">هتمسح بيانات "<span id="delete-target-name"></span>" نهائيًا. الإجراء ده مش قابل للتراجع.</p>
+      <p class="text-sm text-slate-400 mb-5">هتمسح "<span id="delete-target-name"></span>" نهائيًا. الإجراء ده مش قابل للتراجع.</p>
       <div class="flex gap-2 justify-end">
         <button id="delete-cancel" class="px-4 py-2 rounded-lg text-sm border border-slate-700 text-slate-300 hover:bg-slate-800">إلغاء</button>
         <button id="delete-confirm" class="px-4 py-2 rounded-lg text-sm bg-rose-500 hover:bg-rose-600 font-semibold">حذف نهائي</button>
@@ -96,181 +208,272 @@
   const SUPABASE_KEY = 'sb_publishable_4QWsFfheXQVs6lH0-tbwDw_JYr3p1Mr';
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  let customers = [];
-  let pendingDeleteId = null;
-
-  const tableBody = document.getElementById('table-body');
-  const emptyState = document.getElementById('empty-state');
-  const rowCount = document.getElementById('row-count');
-  const errorBanner = document.getElementById('error-banner');
-  const searchInput = document.getElementById('search-input');
-
   function showError(msg){
-    errorBanner.textContent = msg;
-    errorBanner.classList.remove('hidden');
+    const banner = document.getElementById('error-banner');
+    banner.textContent = msg;
+    banner.classList.remove('hidden');
   }
   function clearError(){
-    errorBanner.classList.add('hidden');
-  }
-  function formatDate(iso){
-    if(!iso) return '—';
-    try{
-      const d = new Date(iso);
-      return d.toLocaleDateString('ar-EG', { year:'numeric', month:'short', day:'numeric' });
-    }catch(e){ return iso; }
+    document.getElementById('error-banner').classList.add('hidden');
   }
   function escapeHtml(str){
     return (str ?? '').toString()
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
       .replace(/"/g,'&quot;');
   }
-
-  async function loadCustomers(){
-    clearError();
-    tableBody.innerHTML = Array.from({length:4}).map(() =>
-      `<tr><td class="px-4 py-3"><div class="skeleton h-4 w-28 rounded"></div></td>
-           <td class="px-4 py-3"><div class="skeleton h-4 w-36 rounded"></div></td>
-           <td class="px-4 py-3"><div class="skeleton h-4 w-24 rounded"></div></td>
-           <td class="px-4 py-3"><div class="skeleton h-4 w-20 rounded"></div></td>
-           <td class="px-4 py-3"><div class="skeleton h-4 w-16 rounded"></div></td></tr>`
+  function formatDate(iso){
+    if(!iso) return '—';
+    try{ return new Date(iso).toLocaleDateString('ar-EG', { year:'numeric', month:'short', day:'numeric' }); }
+    catch(e){ return iso; }
+  }
+  function skeletonRows(n, cols){
+    cols = cols || 5;
+    return Array.from({length:n}).map(() =>
+      '<tr>' + Array.from({length:cols}).map(()=>'<td class="px-4 py-3"><div class="skeleton h-4 w-24 rounded"></div></td>').join('') + '</tr>'
     ).join('');
-
-    const { data, error } = await sb.from('customers').select('*').order('created_at', { ascending: false });
-
-    if(error){
-      showError('حصل خطأ في تحميل البيانات: ' + error.message + '. تأكد إن صلاحيات RLS بتسمح للأدمن المسجل دخوله يقرا الجدول.');
-      tableBody.innerHTML = '';
-      rowCount.textContent = '0';
-      return;
-    }
-
-    customers = data || [];
-    renderTable();
   }
 
-  function renderTable(){
-    const q = searchInput.value.trim().toLowerCase();
-    const filtered = !q ? customers : customers.filter(c =>
-      (c.full_name || '').toLowerCase().includes(q) ||
-      (c.email || '').toLowerCase().includes(q) ||
-      (c.phone || '').toLowerCase().includes(q)
-    );
-
-    rowCount.textContent = customers.length;
-
-    if(filtered.length === 0){
-      tableBody.innerHTML = '';
-      emptyState.classList.remove('hidden');
-      return;
-    }
-    emptyState.classList.add('hidden');
-
-    tableBody.innerHTML = filtered.map(c => `
-      <tr data-id="${c.id}" class="hover:bg-slate-900/60">
-        <td class="px-4 py-3">
-          <span class="view-name">${escapeHtml(c.full_name)}</span>
-          <input class="edit-name hidden w-full rounded bg-slate-800 border border-slate-700 px-2 py-1 text-sm" value="${escapeHtml(c.full_name)}">
-        </td>
-        <td class="px-4 py-3">
-          <span class="view-email">${escapeHtml(c.email)}</span>
-          <input class="edit-email hidden w-full rounded bg-slate-800 border border-slate-700 px-2 py-1 text-sm" value="${escapeHtml(c.email)}">
-        </td>
-        <td class="px-4 py-3" dir="ltr" style="text-align:right;">
-          <span class="view-phone">${escapeHtml(c.phone)}</span>
-          <input class="edit-phone hidden w-full rounded bg-slate-800 border border-slate-700 px-2 py-1 text-sm" value="${escapeHtml(c.phone)}" dir="ltr">
-        </td>
-        <td class="px-4 py-3 text-slate-400">${formatDate(c.created_at)}</td>
-        <td class="px-4 py-3">
-          <div class="view-actions flex gap-2">
-            <button class="edit-btn text-violet-400 hover:text-violet-300 text-xs font-semibold">تعديل</button>
-            <button class="delete-btn text-rose-400 hover:text-rose-300 text-xs font-semibold">حذف</button>
-          </div>
-          <div class="edit-actions hidden flex gap-2">
-            <button class="save-btn text-emerald-400 hover:text-emerald-300 text-xs font-semibold">حفظ</button>
-            <button class="cancel-btn text-slate-400 hover:text-slate-300 text-xs font-semibold">إلغاء</button>
-          </div>
-        </td>
-      </tr>
-    `).join('');
-  }
-
-  tableBody.addEventListener('click', async (e) => {
-    const row = e.target.closest('tr');
-    if(!row) return;
-    const id = row.dataset.id;
-
-    if(e.target.classList.contains('edit-btn')){
-      row.querySelectorAll('.view-name,.view-email,.view-phone,.view-actions').forEach(el => el.classList.add('hidden'));
-      row.querySelectorAll('.edit-name,.edit-email,.edit-phone,.edit-actions').forEach(el => el.classList.remove('hidden'));
-    }
-
-    if(e.target.classList.contains('cancel-btn')){
-      renderTable();
-    }
-
-    if(e.target.classList.contains('save-btn')){
-      const newName = row.querySelector('.edit-name').value.trim();
-      const newEmail = row.querySelector('.edit-email').value.trim();
-      const newPhone = row.querySelector('.edit-phone').value.trim();
-
-      e.target.disabled = true;
-      e.target.textContent = 'جاري الحفظ...';
-
-      const { error } = await sb.from('customers')
-        .update({ full_name: newName, email: newEmail, phone: newPhone })
-        .eq('id', id);
-
-      if(error){
-        showError('فشل التعديل: ' + error.message);
-        e.target.disabled = false;
-        e.target.textContent = 'حفظ';
-        return;
-      }
-      await loadCustomers();
-    }
-
-    if(e.target.classList.contains('delete-btn')){
-      pendingDeleteId = id;
-      document.getElementById('delete-target-name').textContent =
-        (customers.find(c => String(c.id) === String(id)) || {}).full_name || '';
-      document.getElementById('delete-modal').classList.remove('hidden');
-    }
-  });
+  let pendingDelete = null;
+  const reloadHandlers = {};
 
   document.getElementById('delete-cancel').addEventListener('click', () => {
-    pendingDeleteId = null;
+    pendingDelete = null;
     document.getElementById('delete-modal').classList.add('hidden');
   });
-
   document.getElementById('delete-confirm').addEventListener('click', async () => {
-    if(!pendingDeleteId) return;
+    if(!pendingDelete) return;
     const btn = document.getElementById('delete-confirm');
     btn.disabled = true;
     btn.textContent = 'جاري الحذف...';
-
-    const { error } = await sb.from('customers').delete().eq('id', pendingDeleteId);
-
+    const { table, id } = pendingDelete;
+    const { error } = await sb.from(table).delete().eq('id', id);
     btn.disabled = false;
     btn.textContent = 'حذف نهائي';
     document.getElementById('delete-modal').classList.add('hidden');
-    pendingDeleteId = null;
-
-    if(error){
-      showError('فشل الحذف: ' + error.message);
-      return;
-    }
-    await loadCustomers();
+    const finishedDelete = pendingDelete;
+    pendingDelete = null;
+    if(error){ showError('فشل الحذف: ' + error.message); return; }
+    reloadHandlers[finishedDelete.table] && reloadHandlers[finishedDelete.table]();
   });
 
-  searchInput.addEventListener('input', renderTable);
-  document.getElementById('refresh-btn').addEventListener('click', loadCustomers);
+  // ---------------- Customers panel ----------------
+  (function initCustomers(){
+    let customers = [];
+    const body = document.getElementById('customers-body');
+    const empty = document.getElementById('customers-empty');
+    const count = document.getElementById('customers-count');
+    const search = document.getElementById('customers-search');
+
+    async function load(){
+      clearError();
+      body.innerHTML = skeletonRows(5);
+      const { data, error } = await sb.from('customers').select('*').order('created_at', { ascending: false });
+      if(error){
+        showError('حصل خطأ في تحميل العملاء: ' + error.message);
+        body.innerHTML = ''; count.textContent = '0';
+        return;
+      }
+      customers = data || [];
+      render();
+    }
+    function render(){
+      const q = search.value.trim().toLowerCase();
+      const filtered = !q ? customers : customers.filter(c =>
+        (c.full_name||'').toLowerCase().includes(q) ||
+        (c.email||'').toLowerCase().includes(q) ||
+        (c.phone||'').toLowerCase().includes(q));
+      count.textContent = customers.length;
+      if(filtered.length === 0){ body.innerHTML=''; empty.classList.remove('hidden'); return; }
+      empty.classList.add('hidden');
+      body.innerHTML = filtered.map(c => `
+        <tr data-id="${c.id}" class="hover:bg-slate-900/60">
+          <td class="px-4 py-3">
+            <span class="view-name">${escapeHtml(c.full_name)}</span>
+            <input class="edit-name hidden w-full rounded bg-slate-800 border border-slate-700 px-2 py-1 text-sm" value="${escapeHtml(c.full_name)}">
+          </td>
+          <td class="px-4 py-3">
+            <span class="view-email">${escapeHtml(c.email)}</span>
+            <input class="edit-email hidden w-full rounded bg-slate-800 border border-slate-700 px-2 py-1 text-sm" value="${escapeHtml(c.email)}">
+          </td>
+          <td class="px-4 py-3" dir="ltr" style="text-align:right;">
+            <span class="view-phone">${escapeHtml(c.phone)}</span>
+            <input class="edit-phone hidden w-full rounded bg-slate-800 border border-slate-700 px-2 py-1 text-sm" value="${escapeHtml(c.phone)}" dir="ltr">
+          </td>
+          <td class="px-4 py-3 text-slate-400">${formatDate(c.created_at)}</td>
+          <td class="px-4 py-3">
+            <div class="view-actions flex gap-2">
+              <button class="edit-btn text-violet-400 hover:text-violet-300 text-xs font-semibold">تعديل</button>
+              <button class="delete-btn text-rose-400 hover:text-rose-300 text-xs font-semibold">حذف</button>
+            </div>
+            <div class="edit-actions hidden flex gap-2">
+              <button class="save-btn text-emerald-400 hover:text-emerald-300 text-xs font-semibold">حفظ</button>
+              <button class="cancel-btn text-slate-400 hover:text-slate-300 text-xs font-semibold">إلغاء</button>
+            </div>
+          </td>
+        </tr>`).join('');
+    }
+
+    body.addEventListener('click', async (e) => {
+      const row = e.target.closest('tr'); if(!row) return;
+      const id = row.dataset.id;
+      if(e.target.classList.contains('edit-btn')){
+        row.querySelectorAll('.view-name,.view-email,.view-phone,.view-actions').forEach(el=>el.classList.add('hidden'));
+        row.querySelectorAll('.edit-name,.edit-email,.edit-phone,.edit-actions').forEach(el=>el.classList.remove('hidden'));
+      }
+      if(e.target.classList.contains('cancel-btn')) render();
+      if(e.target.classList.contains('save-btn')){
+        const full_name = row.querySelector('.edit-name').value.trim();
+        const email = row.querySelector('.edit-email').value.trim();
+        const phone = row.querySelector('.edit-phone').value.trim();
+        e.target.disabled = true; e.target.textContent = 'جاري الحفظ...';
+        const { error } = await sb.from('customers').update({ full_name, email, phone }).eq('id', id);
+        if(error){ showError('فشل التعديل: ' + error.message); e.target.disabled=false; e.target.textContent='حفظ'; return; }
+        await load();
+      }
+      if(e.target.classList.contains('delete-btn')){
+        pendingDelete = { table:'customers', id, name: (customers.find(c=>String(c.id)===String(id))||{}).full_name || '' };
+        document.getElementById('delete-target-name').textContent = pendingDelete.name;
+        document.getElementById('delete-modal').classList.remove('hidden');
+      }
+    });
+
+    search.addEventListener('input', render);
+    document.getElementById('customers-refresh').addEventListener('click', load);
+    reloadHandlers['customers'] = load;
+    window.__loadCustomers = load;
+  })();
+
+  // ---------------- Generic catalog panel (courses / books) ----------------
+  function initCatalogPanel(table, prefix){
+    let items = [];
+    const body = document.getElementById(prefix + '-body');
+    const empty = document.getElementById(prefix + '-empty');
+    const count = document.getElementById(prefix + '-count');
+    const addToggle = document.getElementById(prefix + '-add-toggle');
+    const addForm = document.getElementById(prefix + '-add-form');
+
+    async function load(){
+      clearError();
+      body.innerHTML = skeletonRows(3, 5);
+      const { data, error } = await sb.from(table).select('*').order('created_at', { ascending: false });
+      if(error){
+        showError(`حصل خطأ في تحميل ${table}: ` + error.message + '. تأكد إن اسم الجدول والأعمدة (title, description, price, image_url) مطابقين لما هو موجود في Supabase.');
+        body.innerHTML = ''; count.textContent = '0';
+        return;
+      }
+      items = data || [];
+      render();
+    }
+
+    function render(){
+      count.textContent = items.length;
+      if(items.length === 0){ body.innerHTML=''; empty.classList.remove('hidden'); return; }
+      empty.classList.add('hidden');
+      body.innerHTML = items.map(it => `
+        <tr data-id="${it.id}" class="hover:bg-slate-900/60 align-top">
+          <td class="px-4 py-3">
+            ${it.image_url
+              ? `<img src="${escapeHtml(it.image_url)}" class="w-10 h-10 rounded object-cover border border-slate-800" onerror="this.style.display='none'">`
+              : `<div class="w-10 h-10 rounded bg-slate-800 flex items-center justify-center text-slate-600 text-xs">—</div>`}
+          </td>
+          <td class="px-4 py-3">
+            <span class="view-title font-semibold">${escapeHtml(it.title)}</span>
+            <input class="edit-title hidden w-full rounded bg-slate-800 border border-slate-700 px-2 py-1 text-sm mt-1" value="${escapeHtml(it.title)}">
+            <input class="edit-image_url hidden w-full rounded bg-slate-800 border border-slate-700 px-2 py-1 text-xs mt-1" value="${escapeHtml(it.image_url)}" placeholder="رابط الصورة">
+          </td>
+          <td class="px-4 py-3 text-slate-400 max-w-xs">
+            <span class="view-description">${escapeHtml(it.description) || '—'}</span>
+            <textarea class="edit-description hidden w-full rounded bg-slate-800 border border-slate-700 px-2 py-1 text-sm mt-1" rows="2">${escapeHtml(it.description)}</textarea>
+          </td>
+          <td class="px-4 py-3">
+            <span class="view-price">${it.price != null ? it.price + ' جنيه' : '—'}</span>
+            <input type="number" step="0.01" class="edit-price hidden w-24 rounded bg-slate-800 border border-slate-700 px-2 py-1 text-sm mt-1" value="${it.price != null ? it.price : ''}">
+          </td>
+          <td class="px-4 py-3">
+            <div class="view-actions flex gap-2">
+              <button class="edit-btn text-violet-400 hover:text-violet-300 text-xs font-semibold">تعديل</button>
+              <button class="delete-btn text-rose-400 hover:text-rose-300 text-xs font-semibold">حذف</button>
+            </div>
+            <div class="edit-actions hidden flex gap-2">
+              <button class="save-btn text-emerald-400 hover:text-emerald-300 text-xs font-semibold">حفظ</button>
+              <button class="cancel-btn text-slate-400 hover:text-slate-300 text-xs font-semibold">إلغاء</button>
+            </div>
+          </td>
+        </tr>`).join('');
+    }
+
+    body.addEventListener('click', async (e) => {
+      const row = e.target.closest('tr'); if(!row) return;
+      const id = row.dataset.id;
+      if(e.target.classList.contains('edit-btn')){
+        row.querySelectorAll('.view-title,.view-description,.view-price,.view-actions').forEach(el=>el.classList.add('hidden'));
+        row.querySelectorAll('.edit-title,.edit-image_url,.edit-description,.edit-price,.edit-actions').forEach(el=>el.classList.remove('hidden'));
+      }
+      if(e.target.classList.contains('cancel-btn')) render();
+      if(e.target.classList.contains('save-btn')){
+        const title = row.querySelector('.edit-title').value.trim();
+        const image_url = row.querySelector('.edit-image_url').value.trim();
+        const description = row.querySelector('.edit-description').value.trim();
+        const priceVal = row.querySelector('.edit-price').value;
+        const price = priceVal === '' ? null : parseFloat(priceVal);
+        e.target.disabled = true; e.target.textContent = 'جاري الحفظ...';
+        const { error } = await sb.from(table).update({ title, description, price, image_url }).eq('id', id);
+        if(error){ showError('فشل التعديل: ' + error.message); e.target.disabled=false; e.target.textContent='حفظ'; return; }
+        await load();
+      }
+      if(e.target.classList.contains('delete-btn')){
+        pendingDelete = { table, id, name: (items.find(it=>String(it.id)===String(id))||{}).title || '' };
+        document.getElementById('delete-target-name').textContent = pendingDelete.name;
+        document.getElementById('delete-modal').classList.remove('hidden');
+      }
+    });
+
+    addToggle.addEventListener('click', () => { addForm.classList.toggle('hidden'); });
+    addForm.querySelector('.add-cancel').addEventListener('click', () => {
+      addForm.classList.add('hidden');
+      addForm.reset();
+    });
+    addForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const title = addForm.querySelector('.add-title').value.trim();
+      const description = addForm.querySelector('.add-description').value.trim();
+      const priceVal = addForm.querySelector('.add-price').value;
+      const price = priceVal === '' ? null : parseFloat(priceVal);
+      const image_url = addForm.querySelector('.add-image_url').value.trim();
+      const submitBtn = addForm.querySelector('.add-submit');
+      submitBtn.disabled = true; submitBtn.textContent = 'جاري الحفظ...';
+      const { error } = await sb.from(table).insert({ title, description, price, image_url });
+      submitBtn.disabled = false; submitBtn.textContent = table === 'courses' ? 'حفظ الكورس' : 'حفظ الكتاب';
+      if(error){ showError('فشل إضافة العنصر: ' + error.message); return; }
+      addForm.reset();
+      addForm.classList.add('hidden');
+      await load();
+    });
+
+    reloadHandlers[table] = load;
+    return { load };
+  }
+
+  const coursesPanel = initCatalogPanel('courses', 'courses');
+  const booksPanel = initCatalogPanel('books', 'books');
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.tab).classList.add('active');
+      clearError();
+      if(btn.dataset.tab === 'courses-panel') coursesPanel.load();
+      if(btn.dataset.tab === 'books-panel') booksPanel.load();
+    });
+  });
 
   document.getElementById('logout-btn').addEventListener('click', async () => {
     await sb.auth.signOut();
     window.location.href = 'admin-login.html';
   });
 
-  // ---- Auth gate: only render the dashboard for a logged-in admin ----
   (async function init(){
     const { data } = await sb.auth.getSession();
     if(!data.session){
@@ -280,13 +483,11 @@
     document.getElementById('admin-email').textContent = data.session.user.email;
     document.getElementById('auth-gate').classList.add('hidden');
     document.getElementById('app').classList.remove('hidden');
-    loadCustomers();
+    window.__loadCustomers();
   })();
 
   sb.auth.onAuthStateChange((event) => {
-    if(event === 'SIGNED_OUT'){
-      window.location.href = 'admin-login.html';
-    }
+    if(event === 'SIGNED_OUT') window.location.href = 'admin-login.html';
   });
 </script>
 </body>
