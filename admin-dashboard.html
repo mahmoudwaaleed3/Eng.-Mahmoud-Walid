@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة تحكم الأدمن | العملاء</title>
+<meta name="robots" content="noindex, nofollow">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body{font-family:'Cairo',sans-serif;}
+  .skeleton{background:linear-gradient(90deg,#1e293b 25%,#334155 37%,#1e293b 63%);background-size:400% 100%;animation:shimmer 1.4s ease infinite;}
+  @keyframes shimmer{0%{background-position:100% 50%;}100%{background-position:0 50%;}}
+</style>
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100">
+
+  <!-- Auth gate -->
+  <div id="auth-gate" class="fixed inset-0 bg-slate-950 flex items-center justify-center z-50">
+    <p class="text-slate-400 text-sm">جاري التحقق من الدخول...</p>
+  </div>
+
+  <div id="app" class="hidden">
+
+    <header class="border-b border-slate-800 sticky top-0 bg-slate-950/90 backdrop-blur z-20">
+      <div class="max-w-6xl mx-auto px-5 py-4 flex items-center justify-between gap-3 flex-wrap">
+        <div class="flex items-center gap-2">
+          <svg viewBox="0 0 40 40" class="w-7 h-7" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 8c-4-3-9-3-14-1v22c5-2 10-2 14 1 4-3 9-3 14-1V7c-5-2-10-2-14 1z" stroke="#7C6CF6" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M20 8v22" stroke="#7C6CF6" stroke-width="2"/>
+          </svg>
+          <div>
+            <div class="font-bold text-sm leading-tight">لوحة تحكم الأدمن</div>
+            <div class="text-xs text-slate-500 leading-tight" id="admin-email">—</div>
+          </div>
+        </div>
+        <button id="logout-btn" class="text-sm font-semibold text-rose-400 hover:text-rose-300 border border-rose-500/30 hover:border-rose-400/50 rounded-lg px-3 py-1.5 transition">تسجيل الخروج</button>
+      </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-5 py-6">
+
+      <div class="flex items-center justify-between flex-wrap gap-3 mb-5">
+        <div>
+          <h1 class="text-xl font-bold">بيانات العملاء</h1>
+          <p class="text-sm text-slate-500 mt-0.5"><span id="row-count">0</span> عميل مسجل</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="relative">
+            <input id="search-input" type="text" placeholder="دور بالاسم أو الإيميل أو الرقم..."
+              class="w-64 max-w-full rounded-lg bg-slate-900 border border-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+          </div>
+          <button id="refresh-btn" class="rounded-lg border border-slate-800 hover:border-slate-700 px-3 py-2 text-sm text-slate-300" title="تحديث">⟳</button>
+        </div>
+      </div>
+
+      <div id="error-banner" class="hidden mb-4 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300 text-sm px-4 py-3"></div>
+
+      <div class="rounded-xl border border-slate-800 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-900 text-slate-400">
+              <tr>
+                <th class="text-right font-semibold px-4 py-3">الاسم</th>
+                <th class="text-right font-semibold px-4 py-3">الإيميل</th>
+                <th class="text-right font-semibold px-4 py-3">الموبايل</th>
+                <th class="text-right font-semibold px-4 py-3">تاريخ التسجيل</th>
+                <th class="text-right font-semibold px-4 py-3 w-40">إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="table-body" class="divide-y divide-slate-800"></tbody>
+          </table>
+        </div>
+        <div id="empty-state" class="hidden text-center text-slate-500 text-sm py-14">مفيش عملاء يطابقوا البحث</div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Delete confirm modal -->
+  <div id="delete-modal" class="hidden fixed inset-0 bg-black/60 z-40 flex items-center justify-center px-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 max-w-sm w-full">
+      <h3 class="font-bold mb-2">تأكيد الحذف</h3>
+      <p class="text-sm text-slate-400 mb-5">هتمسح بيانات "<span id="delete-target-name"></span>" نهائيًا. الإجراء ده مش قابل للتراجع.</p>
+      <div class="flex gap-2 justify-end">
+        <button id="delete-cancel" class="px-4 py-2 rounded-lg text-sm border border-slate-700 text-slate-300 hover:bg-slate-800">إلغاء</button>
+        <button id="delete-confirm" class="px-4 py-2 rounded-lg text-sm bg-rose-500 hover:bg-rose-600 font-semibold">حذف نهائي</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const SUPABASE_URL = 'https://cayfcvkqjrphbshdysnb.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_4QWsFfheXQVs6lH0-tbwDw_JYr3p1Mr';
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let customers = [];
+  let pendingDeleteId = null;
+
+  const tableBody = document.getElementById('table-body');
+  const emptyState = document.getElementById('empty-state');
+  const rowCount = document.getElementById('row-count');
+  const errorBanner = document.getElementById('error-banner');
+  const searchInput = document.getElementById('search-input');
+
+  function showError(msg){
+    errorBanner.textContent = msg;
+    errorBanner.classList.remove('hidden');
+  }
+  function clearError(){
+    errorBanner.classList.add('hidden');
+  }
+  function formatDate(iso){
+    if(!iso) return '—';
+    try{
+      const d = new Date(iso);
+      return d.toLocaleDateString('ar-EG', { year:'numeric', month:'short', day:'numeric' });
+    }catch(e){ return iso; }
+  }
+  function escapeHtml(str){
+    return (str ?? '').toString()
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;');
+  }
+
+  async function loadCustomers(){
+    clearError();
+    tableBody.innerHTML = Array.from({length:4}).map(() =>
+      `<tr><td class="px-4 py-3"><div class="skeleton h-4 w-28 rounded"></div></td>
+           <td class="px-4 py-3"><div class="skeleton h-4 w-36 rounded"></div></td>
+           <td class="px-4 py-3"><div class="skeleton h-4 w-24 rounded"></div></td>
+           <td class="px-4 py-3"><div class="skeleton h-4 w-20 rounded"></div></td>
+           <td class="px-4 py-3"><div class="skeleton h-4 w-16 rounded"></div></td></tr>`
+    ).join('');
+
+    const { data, error } = await sb.from('customers').select('*').order('created_at', { ascending: false });
+
+    if(error){
+      showError('حصل خطأ في تحميل البيانات: ' + error.message + '. تأكد إن صلاحيات RLS بتسمح للأدمن المسجل دخوله يقرا الجدول.');
+      tableBody.innerHTML = '';
+      rowCount.textContent = '0';
+      return;
+    }
+
+    customers = data || [];
+    renderTable();
+  }
+
+  function renderTable(){
+    const q = searchInput.value.trim().toLowerCase();
+    const filtered = !q ? customers : customers.filter(c =>
+      (c.full_name || '').toLowerCase().includes(q) ||
+      (c.email || '').toLowerCase().includes(q) ||
+      (c.phone || '').toLowerCase().includes(q)
+    );
+
+    rowCount.textContent = customers.length;
+
+    if(filtered.length === 0){
+      tableBody.innerHTML = '';
+      emptyState.classList.remove('hidden');
+      return;
+    }
+    emptyState.classList.add('hidden');
+
+    tableBody.innerHTML = filtered.map(c => `
+      <tr data-id="${c.id}" class="hover:bg-slate-900/60">
+        <td class="px-4 py-3">
+          <span class="view-name">${escapeHtml(c.full_name)}</span>
+          <input class="edit-name hidden w-full rounded bg-slate-800 border border-slate-700 px-2 py-1 text-sm" value="${escapeHtml(c.full_name)}">
+        </td>
+        <td class="px-4 py-3">
+          <span class="view-email">${escapeHtml(c.email)}</span>
+          <input class="edit-email hidden w-full rounded bg-slate-800 border border-slate-700 px-2 py-1 text-sm" value="${escapeHtml(c.email)}">
+        </td>
+        <td class="px-4 py-3" dir="ltr" style="text-align:right;">
+          <span class="view-phone">${escapeHtml(c.phone)}</span>
+          <input class="edit-phone hidden w-full rounded bg-slate-800 border border-slate-700 px-2 py-1 text-sm" value="${escapeHtml(c.phone)}" dir="ltr">
+        </td>
+        <td class="px-4 py-3 text-slate-400">${formatDate(c.created_at)}</td>
+        <td class="px-4 py-3">
+          <div class="view-actions flex gap-2">
+            <button class="edit-btn text-violet-400 hover:text-violet-300 text-xs font-semibold">تعديل</button>
+            <button class="delete-btn text-rose-400 hover:text-rose-300 text-xs font-semibold">حذف</button>
+          </div>
+          <div class="edit-actions hidden flex gap-2">
+            <button class="save-btn text-emerald-400 hover:text-emerald-300 text-xs font-semibold">حفظ</button>
+            <button class="cancel-btn text-slate-400 hover:text-slate-300 text-xs font-semibold">إلغاء</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  tableBody.addEventListener('click', async (e) => {
+    const row = e.target.closest('tr');
+    if(!row) return;
+    const id = row.dataset.id;
+
+    if(e.target.classList.contains('edit-btn')){
+      row.querySelectorAll('.view-name,.view-email,.view-phone,.view-actions').forEach(el => el.classList.add('hidden'));
+      row.querySelectorAll('.edit-name,.edit-email,.edit-phone,.edit-actions').forEach(el => el.classList.remove('hidden'));
+    }
+
+    if(e.target.classList.contains('cancel-btn')){
+      renderTable();
+    }
+
+    if(e.target.classList.contains('save-btn')){
+      const newName = row.querySelector('.edit-name').value.trim();
+      const newEmail = row.querySelector('.edit-email').value.trim();
+      const newPhone = row.querySelector('.edit-phone').value.trim();
+
+      e.target.disabled = true;
+      e.target.textContent = 'جاري الحفظ...';
+
+      const { error } = await sb.from('customers')
+        .update({ full_name: newName, email: newEmail, phone: newPhone })
+        .eq('id', id);
+
+      if(error){
+        showError('فشل التعديل: ' + error.message);
+        e.target.disabled = false;
+        e.target.textContent = 'حفظ';
+        return;
+      }
+      await loadCustomers();
+    }
+
+    if(e.target.classList.contains('delete-btn')){
+      pendingDeleteId = id;
+      document.getElementById('delete-target-name').textContent =
+        (customers.find(c => String(c.id) === String(id)) || {}).full_name || '';
+      document.getElementById('delete-modal').classList.remove('hidden');
+    }
+  });
+
+  document.getElementById('delete-cancel').addEventListener('click', () => {
+    pendingDeleteId = null;
+    document.getElementById('delete-modal').classList.add('hidden');
+  });
+
+  document.getElementById('delete-confirm').addEventListener('click', async () => {
+    if(!pendingDeleteId) return;
+    const btn = document.getElementById('delete-confirm');
+    btn.disabled = true;
+    btn.textContent = 'جاري الحذف...';
+
+    const { error } = await sb.from('customers').delete().eq('id', pendingDeleteId);
+
+    btn.disabled = false;
+    btn.textContent = 'حذف نهائي';
+    document.getElementById('delete-modal').classList.add('hidden');
+    pendingDeleteId = null;
+
+    if(error){
+      showError('فشل الحذف: ' + error.message);
+      return;
+    }
+    await loadCustomers();
+  });
+
+  searchInput.addEventListener('input', renderTable);
+  document.getElementById('refresh-btn').addEventListener('click', loadCustomers);
+
+  document.getElementById('logout-btn').addEventListener('click', async () => {
+    await sb.auth.signOut();
+    window.location.href = 'admin-login.html';
+  });
+
+  // ---- Auth gate: only render the dashboard for a logged-in admin ----
+  (async function init(){
+    const { data } = await sb.auth.getSession();
+    if(!data.session){
+      window.location.href = 'admin-login.html';
+      return;
+    }
+    document.getElementById('admin-email').textContent = data.session.user.email;
+    document.getElementById('auth-gate').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    loadCustomers();
+  })();
+
+  sb.auth.onAuthStateChange((event) => {
+    if(event === 'SIGNED_OUT'){
+      window.location.href = 'admin-login.html';
+    }
+  });
+</script>
+</body>
+</html>
