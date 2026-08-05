@@ -198,4 +198,73 @@ document.addEventListener('DOMContentLoaded', function(){
       }
     });
   });
+
+  // ---- Contact form -> Supabase ----
+  var SUPABASE_URL = 'https://cayfcvkqjrphbshdysnb.supabase.co/rest/v1';
+  var SUPABASE_KEY = 'sb_publishable_4QWsFfheXQVs6lH0-tbwDw_JYr3p1Mr';
+
+  var contactForm = document.getElementById('contact-form');
+  if(contactForm){
+    var isEnglish = document.documentElement.lang === 'en';
+    var msgs = isEnglish ? {
+      sending: 'Sending...',
+      success: 'Thanks! Your details were received — I\'ll be in touch soon.',
+      error: 'Something went wrong. Please try again, or message me directly on WhatsApp.'
+    } : {
+      sending: 'جاري الإرسال...',
+      success: 'تم استلام بياناتك بنجاح، هيتم التواصل معاك قريب.',
+      error: 'حصل خطأ، حاول تاني أو تواصل معايا مباشرة على واتساب.'
+    };
+
+    contactForm.addEventListener('submit', function(e){
+      e.preventDefault();
+      var submitBtn = document.getElementById('contact-submit');
+      var statusEl = document.getElementById('contact-status');
+      var nameEl = document.getElementById('name');
+      var emailEl = document.getElementById('email');
+      var phoneEl = document.getElementById('phone');
+
+      var originalBtnText = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.textContent = msgs.sending;
+
+      function setStatus(ok, text){
+        if(!statusEl) return;
+        statusEl.style.display = 'block';
+        statusEl.style.color = ok ? '#3FA65A' : 'var(--rust)';
+        statusEl.textContent = text;
+      }
+
+      fetch(SUPABASE_URL + '/customers', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+          full_name: nameEl.value.trim(),
+          email: emailEl.value.trim(),
+          phone: phoneEl.value.trim()
+        })
+      }).then(function(res){
+        if(res.ok){
+          setStatus(true, msgs.success);
+          showToast(msgs.success);
+          contactForm.reset();
+        } else {
+          return res.json().catch(function(){ return {}; }).then(function(err){
+            throw new Error(err.message || ('HTTP ' + res.status));
+          });
+        }
+      }).catch(function(err){
+        setStatus(false, msgs.error);
+        console.error('Supabase insert failed:', err);
+      }).finally(function(){
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalBtnText;
+      });
+    });
+  }
 });

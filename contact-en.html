@@ -116,10 +116,14 @@
         <p class="eyebrow">Or send me a message</p>
         <h2>Leave your details and I'll get back to you</h2>
       </div>
-      <form class="form-grid" onsubmit="event.preventDefault(); alert('Your message has been received, I\'ll be in touch soon.');">
+      <form class="form-grid" id="contact-form">
         <div class="field">
           <label for="name">Name</label>
           <input type="text" id="name" placeholder="Your name" required>
+        </div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="Your email" required>
         </div>
         <div class="field">
           <label for="phone">Phone / WhatsApp number</label>
@@ -141,7 +145,8 @@
           <label for="msg">Your message (optional)</label>
           <textarea id="msg" placeholder="Write any question you have"></textarea>
         </div>
-        <button type="submit" class="btn btn-solid" style="width:fit-content;">Send request</button>
+        <button type="submit" class="btn btn-solid" id="contact-submit" style="width:fit-content;">Send request</button>
+        <p id="contact-status" style="font-size:.85rem; display:none;"></p>
       </form>
     </div>
 
