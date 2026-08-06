@@ -1,4 +1,10 @@
 document.addEventListener('DOMContentLoaded', function(){
+  var SB_BASE_URL = 'https://cayfcvkqjrphbshdysnb.supabase.co';
+  var SB_PUBLIC_KEY = 'sb_publishable_4QWsFfheXQVs6lH0-tbwDw_JYr3p1Mr';
+  var sbClient = (typeof supabase !== 'undefined')
+    ? supabase.createClient(SB_BASE_URL, SB_PUBLIC_KEY)
+    : null;
+
   var toggle = document.querySelector('.menu-toggle');
   var links = document.querySelector('nav.links');
   var backdrop = document.querySelector('.nav-backdrop');
@@ -179,23 +185,35 @@ document.addEventListener('DOMContentLoaded', function(){
     });
   }
 
-  function updateAuthUI(){
-    var state = (function(){ try{ return localStorage.getItem('authState') || 'out'; }catch(e){ return 'out'; } })();
+  function updateAuthUI(isLoggedIn){
     document.querySelectorAll('.auth-link').forEach(function(link){
-      link.style.display = (link.dataset.authState === state) ? '' : 'none';
+      var wantsIn = link.dataset.authState === 'in';
+      link.style.display = (wantsIn === isLoggedIn) ? '' : 'none';
     });
   }
-  updateAuthUI();
+
+  if(sbClient){
+    sbClient.auth.getSession().then(function(res){
+      updateAuthUI(!!(res.data && res.data.session));
+    });
+    sbClient.auth.onAuthStateChange(function(event, session){
+      updateAuthUI(!!session);
+    });
+  } else {
+    updateAuthUI(false);
+  }
 
   document.querySelectorAll('.auth-link[data-auth-state="in"]').forEach(function(link){
     link.addEventListener('click', function(e){
       e.preventDefault();
-      try{ localStorage.setItem('authState', 'out'); }catch(err){}
-      updateAuthUI();
-      showToast('تم تسجيل الخروج بنجاح');
-      if(window.location.pathname.indexOf('mycourses.html') !== -1){
-        setTimeout(function(){ window.location.href = 'index.html'; }, 900);
-      }
+      if(!sbClient) return;
+      sbClient.auth.signOut().then(function(){
+        updateAuthUI(false);
+        showToast('تم تسجيل الخروج بنجاح');
+        if(window.location.pathname.indexOf('mycourses.html') !== -1){
+          setTimeout(function(){ window.location.href = 'index.html'; }, 900);
+        }
+      });
     });
   });
 

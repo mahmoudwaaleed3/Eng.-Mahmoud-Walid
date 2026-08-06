@@ -39,7 +39,7 @@
       <a href="mycourses.html" class="active">كورساتي</a>
       <a href="about.html">عن المحاضر</a>
       <a href="contact.html">تواصل معايا</a>
-      <a href="https://wa.me/201556280677" target="_blank" rel="noopener" class="support-link">
+      <a href="https://wa.me/201556280677" target="_blank" rel="noopener" class="support-link" aria-label="الدعم الفني" title="الدعم الفني">
         <svg class="nav-inline-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 15v-2a8 8 0 0116 0v2"/><path d="M4 15a2 2 0 002 2h1v-5H5a2 2 0 00-2 2v1zM20 15a2 2 0 01-2 2h-1v-5h1a2 2 0 012 2v1z"/><path d="M18 17v1a3 3 0 01-3 3h-2"/></svg>
         الدعم الفني
       </a>
@@ -142,15 +142,22 @@
 
 <script>
 (function(){
-  var state = 'out';
-  try{ state = localStorage.getItem('authState') || 'out'; }catch(e){}
-  document.getElementById(state === 'in' ? 'mc-unlocked' : 'mc-locked').style.display = 'block';
+  var SUPABASE_URL = 'https://cayfcvkqjrphbshdysnb.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_4QWsFfheXQVs6lH0-tbwDw_JYr3p1Mr';
+  var sbAuth = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  sbAuth.auth.getSession().then(function(res){
+    var loggedIn = !!(res.data && res.data.session);
+    document.getElementById(loggedIn ? 'mc-unlocked' : 'mc-locked').style.display = 'block';
+  });
+
   var logoutLink = document.getElementById('mc-logout');
   if(logoutLink){
     logoutLink.addEventListener('click', function(e){
       e.preventDefault();
-      try{ localStorage.setItem('authState', 'out'); }catch(err){}
-      window.location.href = 'index.html';
+      sbAuth.auth.signOut().then(function(){
+        window.location.href = 'index.html';
+      });
     });
   }
 })();
