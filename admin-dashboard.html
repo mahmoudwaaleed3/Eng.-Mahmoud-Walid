@@ -463,7 +463,10 @@
       <form id="lecture-add-form" class="flex flex-col gap-2 mb-4 border-b border-slate-800 pb-4">
         <input id="lecture-title" required placeholder="عنوان المحاضرة" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm">
         <input id="lecture-video-url" required placeholder="رابط الفيديو أو ملف المحاضرة" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm">
-        <button type="submit" id="lecture-add-btn" class="self-end px-4 py-2 rounded-lg text-sm bg-violet-500 hover:bg-violet-600 font-semibold">+ إضافة محاضرة</button>
+        <div class="flex gap-2 items-center">
+          <input id="lecture-order" type="number" step="1" placeholder="الترتيب" class="w-24 rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm">
+          <button type="submit" id="lecture-add-btn" class="mr-auto px-4 py-2 rounded-lg text-sm bg-violet-500 hover:bg-violet-600 font-semibold">+ إضافة محاضرة</button>
+        </div>
       </form>
 
       <div id="lectures-error" class="hidden mb-3 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300 text-xs px-3 py-2"></div>
@@ -787,29 +790,53 @@
   }
   function clearLecturesError(){ lecturesErrorEl.classList.add('hidden'); }
 
+  let currentLectures = [];
+
   async function loadLectures(courseId){
     clearLecturesError();
     lecturesList.innerHTML = skeletonRows(2, 1).replace(/<tr>/g,'<div class="w-full">').replace(/<\/tr>/g,'</div>');
-    const { data, error } = await sb.from('lectures').select('*').eq('course_id', courseId).order('created_at', { ascending: true });
+    const { data, error } = await sb.from('lectures').select('*').eq('course_id', courseId)
+      .order('order_num', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: true });
     if(error){
       lecturesList.innerHTML = '';
       showLecturesError('حصل خطأ في تحميل المحاضرات: ' + error.message + '. تأكد إن جدول lectures وعمود course_id متطابقين مع نوع id بتاع جدول courses.');
       return;
     }
-    const lectures = data || [];
-    if(lectures.length === 0){
+    currentLectures = data || [];
+    renderLectures();
+  }
+
+  function renderLectures(){
+    if(currentLectures.length === 0){
       lecturesList.innerHTML = '';
       lecturesEmpty.classList.remove('hidden');
       return;
     }
     lecturesEmpty.classList.add('hidden');
-    lecturesList.innerHTML = lectures.map((lec, i) => `
-      <div class="flex items-center justify-between gap-2 bg-slate-800/60 rounded-lg px-3 py-2" data-lecture-id="${lec.id}">
-        <div class="min-w-0">
-          <div class="text-sm font-semibold truncate">${i+1}. ${escapeHtml(lec.title)}</div>
-          <a href="${escapeHtml(lec.video_url)}" target="_blank" rel="noopener" class="text-xs text-violet-400 hover:underline truncate block">${escapeHtml(lec.video_url)}</a>
+    lecturesList.innerHTML = currentLectures.map((lec, i) => `
+      <div class="bg-slate-800/60 rounded-lg px-3 py-2" data-lecture-id="${lec.id}">
+        <div class="view-row flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <div class="text-sm font-semibold truncate">${lec.order_num != null ? lec.order_num : i+1}. ${escapeHtml(lec.title)}</div>
+            <a href="${escapeHtml(lec.video_url)}" target="_blank" rel="noopener" class="text-xs text-violet-400 hover:underline truncate block">${escapeHtml(lec.video_url)}</a>
+          </div>
+          <div class="flex gap-2 flex-shrink-0">
+            <button class="lecture-edit-btn text-amber-400 hover:text-amber-300 text-xs font-semibold">تعديل</button>
+            <button class="lecture-delete-btn text-rose-400 hover:text-rose-300 text-xs font-semibold">حذف</button>
+          </div>
         </div>
-        <button class="lecture-delete-btn text-rose-400 hover:text-rose-300 text-xs font-semibold flex-shrink-0">حذف</button>
+        <div class="edit-row hidden flex flex-col gap-2 mt-1">
+          <input class="lec-edit-title w-full rounded bg-slate-900 border border-slate-700 px-2 py-1.5 text-sm" value="${escapeHtml(lec.title)}">
+          <input class="lec-edit-video w-full rounded bg-slate-900 border border-slate-700 px-2 py-1.5 text-sm" value="${escapeHtml(lec.video_url)}">
+          <div class="flex gap-2 items-center">
+            <input type="number" step="1" class="lec-edit-order w-20 rounded bg-slate-900 border border-slate-700 px-2 py-1.5 text-sm" value="${lec.order_num != null ? lec.order_num : ''}" placeholder="ترتيب">
+            <div class="flex gap-2 mr-auto">
+              <button class="lecture-save-btn text-emerald-400 hover:text-emerald-300 text-xs font-semibold">حفظ</button>
+              <button class="lecture-cancel-btn text-slate-400 hover:text-slate-300 text-xs font-semibold">إلغاء</button>
+            </div>
+          </div>
+        </div>
       </div>`).join('');
   }
 
@@ -831,9 +858,11 @@
     if(!currentLecturesCourseId) return;
     const title = document.getElementById('lecture-title').value.trim();
     const video_url = document.getElementById('lecture-video-url').value.trim();
+    const orderVal = document.getElementById('lecture-order').value;
+    const order_num = orderVal === '' ? currentLectures.length + 1 : parseInt(orderVal, 10);
     const btn = document.getElementById('lecture-add-btn');
     btn.disabled = true; btn.textContent = 'جاري الإضافة...';
-    const { error } = await sb.from('lectures').insert({ course_id: currentLecturesCourseId, title, video_url });
+    const { error } = await sb.from('lectures').insert({ course_id: currentLecturesCourseId, title, video_url, order_num });
     btn.disabled = false; btn.textContent = '+ إضافة محاضرة';
     if(error){ showLecturesError('فشلت إضافة المحاضرة: ' + error.message); return; }
     lectureAddForm.reset();
@@ -841,13 +870,36 @@
   });
 
   lecturesList.addEventListener('click', async (e) => {
-    if(!e.target.classList.contains('lecture-delete-btn')) return;
     const row = e.target.closest('[data-lecture-id]');
+    if(!row) return;
     const lectureId = row.dataset.lectureId;
-    if(!confirm('متأكد إنك عايز تمسح المحاضرة دي؟')) return;
-    const { error } = await sb.from('lectures').delete().eq('id', lectureId);
-    if(error){ showLecturesError('فشل الحذف: ' + error.message); return; }
-    loadLectures(currentLecturesCourseId);
+
+    if(e.target.classList.contains('lecture-edit-btn')){
+      row.querySelector('.view-row').classList.add('hidden');
+      row.querySelector('.edit-row').classList.remove('hidden');
+      return;
+    }
+    if(e.target.classList.contains('lecture-cancel-btn')){
+      renderLectures();
+      return;
+    }
+    if(e.target.classList.contains('lecture-save-btn')){
+      const title = row.querySelector('.lec-edit-title').value.trim();
+      const video_url = row.querySelector('.lec-edit-video').value.trim();
+      const orderVal = row.querySelector('.lec-edit-order').value;
+      const order_num = orderVal === '' ? null : parseInt(orderVal, 10);
+      e.target.disabled = true; e.target.textContent = 'جاري الحفظ...';
+      const { error } = await sb.from('lectures').update({ title, video_url, order_num }).eq('id', lectureId);
+      if(error){ showLecturesError('فشل تعديل المحاضرة: ' + error.message); e.target.disabled = false; e.target.textContent = 'حفظ'; return; }
+      await loadLectures(currentLecturesCourseId);
+      return;
+    }
+    if(e.target.classList.contains('lecture-delete-btn')){
+      if(!confirm('متأكد إنك عايز تمسح المحاضرة دي؟')) return;
+      const { error } = await sb.from('lectures').delete().eq('id', lectureId);
+      if(error){ showLecturesError('فشل الحذف: ' + error.message); return; }
+      loadLectures(currentLecturesCourseId);
+    }
   });
 
   // ---------------- Shared: categories + products cache ----------------
