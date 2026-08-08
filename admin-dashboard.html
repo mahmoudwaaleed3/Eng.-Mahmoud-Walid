@@ -993,6 +993,7 @@
     const enrollProductSelect = document.getElementById('enroll-product-id');
 
     function productTitle(type, id){
+      if(!type || !id) return 'لسه مش محدد';
       const list = productsCache[type] || [];
       const found = list.find(p => String(p.id) === String(id));
       return found ? found.title : (type === 'course' ? 'كورس محذوف' : 'كتاب محذوف');
@@ -1028,7 +1029,10 @@
             <div class="font-semibold">${escapeHtml(o.student_name)}</div>
             <div class="text-xs text-slate-500">${escapeHtml(o.contact)}</div>
           </td>
-          <td class="px-4 py-3">${escapeHtml(productTitle(o.product_type, o.product_id))}</td>
+          <td class="px-4 py-3">
+            ${escapeHtml(productTitle(o.product_type, o.product_id))}
+            ${o.receipt_url ? `<a href="${escapeHtml(o.receipt_url)}" target="_blank" rel="noopener" class="block text-xs text-violet-400 hover:underline mt-1">صورة الإيصال ↗</a>` : ''}
+          </td>
           <td class="px-4 py-3">${o.price != null ? o.price + ' جنيه' : '—'}</td>
           <td class="px-4 py-3">${escapeHtml(o.payment_method || '—')}</td>
           <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded-full ${statusBadge[o.status]||''}">${statusLabel[o.status]||o.status}</span></td>
@@ -1093,10 +1097,12 @@
         e.target.disabled = true; e.target.textContent = 'جاري التأكيد...';
         const { error: updateErr } = await sb.from('orders').update({ status: 'confirmed' }).eq('id', id);
         if(updateErr){ showError('فشل تأكيد الطلب: ' + updateErr.message); await load(); return; }
-        const { error: enrollErr } = await sb.from('enrollments')
-          .upsert({ student_email: order.contact, product_type: order.product_type, product_id: order.product_id },
-                  { onConflict: 'student_email,product_type,product_id' });
-        if(enrollErr){ showError('اتأكد الطلب بس حصل خطأ في تفعيل الوصول: ' + enrollErr.message); }
+        if(order.product_type && order.product_id){
+          const { error: enrollErr } = await sb.from('enrollments')
+            .upsert({ student_email: order.contact, product_type: order.product_type, product_id: order.product_id },
+                    { onConflict: 'student_email,product_type,product_id' });
+          if(enrollErr){ showError('اتأكد الطلب بس حصل خطأ في تفعيل الوصول: ' + enrollErr.message); }
+        }
         await load();
       }
       if(e.target.classList.contains('order-reject-btn')){

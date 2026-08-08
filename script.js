@@ -285,4 +285,127 @@ document.addEventListener('DOMContentLoaded', function(){
       });
     });
   }
+
+  // ---- Payment cards: copy to clipboard ----
+  document.querySelectorAll('.pay-copy-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var text = btn.getAttribute('data-copy');
+      var done = function(){
+        var original = btn.textContent;
+        btn.textContent = 'اتنسخ ✓';
+        btn.classList.add('copied');
+        setTimeout(function(){
+          btn.textContent = original;
+          btn.classList.remove('copied');
+        }, 1600);
+      };
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(done).catch(function(){
+          fallbackCopy(text); done();
+        });
+      } else {
+        fallbackCopy(text); done();
+      }
+    });
+  });
+  function fallbackCopy(text){
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try{ document.execCommand('copy'); }catch(e){}
+    document.body.removeChild(ta);
+  }
+
+  // ---- Receipt upload form ----
+  var fileInput = document.getElementById('receipt-file');
+  var fileNameEl = document.getElementById('file-drop-name');
+  var fileLabelEl = document.querySelector('#file-drop-label .file-drop-label');
+  if(fileInput){
+    fileInput.addEventListener('change', function(){
+      if(fileInput.files && fileInput.files[0]){
+        fileNameEl.textContent = fileInput.files[0].name;
+        fileNameEl.style.display = 'block';
+        fileLabelEl.style.display = 'none';
+      } else {
+        fileNameEl.style.display = 'none';
+        fileLabelEl.style.display = 'block';
+      }
+    });
+  }
+
+  var receiptForm = document.getElementById('receipt-form');
+  if(receiptForm && sbClient){
+    var receiptIsEnglish = document.documentElement.lang === 'en';
+    var receiptMsgs = receiptIsEnglish ? {
+      sending: 'Sending...', uploading: 'Uploading receipt...',
+      success: 'Received! We\'ll confirm and activate your product shortly.',
+      error: 'Something went wrong. Please try again or send it on WhatsApp instead.'
+    } : {
+      sending: 'جاري الإرسال...', uploading: 'جاري رفع الإيصال...',
+      success: 'تم الاستلام! هنراجع الإيصال ونفعّل المنتج قريب.',
+      error: 'حصل خطأ، حاول تاني أو ابعت الإيصال على واتساب بدل كده.'
+    };
+
+    receiptForm.addEventListener('submit', function(e){
+      e.preventDefault();
+      var submitBtn = document.getElementById('receipt-submit');
+      var statusEl = document.getElementById('receipt-status');
+      var phone = document.getElementById('receipt-phone').value.trim();
+      var note = document.getElementById('receipt-note').value.trim();
+      var file = fileInput && fileInput.files ? fileInput.files[0] : null;
+
+      function setReceiptStatus(ok, text){
+        statusEl.style.display = 'block';
+        statusEl.style.color = ok ? '#3FA65A' : 'var(--rust)';
+        statusEl.textContent = text;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = receiptMsgs.sending;
+
+      function insertOrder(receiptUrl){
+        return sbClient.from('orders').insert({
+          student_name: phone,
+          contact: phone,
+          payment_method: note || 'إيصال مرفوع من الموقع',
+          status: 'pending',
+          receipt_url: receiptUrl || null
+        });
+      }
+
+      var uploadPromise;
+      if(file){
+        submitBtn.textContent = receiptMsgs.uploading;
+        var safeName = Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+        uploadPromise = sbClient.storage.from('receipts').upload(safeName, file).then(function(res){
+          if(res.error) throw res.error;
+          var pub = sbClient.storage.from('receipts').getPublicUrl(safeName);
+          return pub && pub.data ? pub.data.publicUrl : null;
+        });
+      } else {
+        uploadPromise = Promise.resolve(null);
+      }
+
+      uploadPromise.then(function(receiptUrl){
+        submitBtn.textContent = receiptMsgs.sending;
+        return insertOrder(receiptUrl);
+      }).then(function(res){
+        if(res.error) throw res.error;
+        setReceiptStatus(true, receiptMsgs.success);
+        showToast(receiptMsgs.success);
+        receiptForm.reset();
+        if(fileNameEl){ fileNameEl.style.display = 'none'; }
+        if(fileLabelEl){ fileLabelEl.style.display = 'block'; }
+      }).catch(function(err){
+        setReceiptStatus(false, receiptMsgs.error);
+        console.error('Receipt submit failed:', err);
+      }).finally(function(){
+        submitBtn.disabled = false;
+        submitBtn.textContent = receiptIsEnglish ? 'Send for review' : 'إرسال للمراجعة';
+      });
+    });
+  }
 });

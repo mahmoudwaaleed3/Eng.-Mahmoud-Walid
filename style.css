@@ -535,6 +535,62 @@ section{padding:72px 0;}
 .faq-a p{padding-bottom:18px; color:var(--ink-soft); font-size:.93rem; max-width:70ch;}
 
 /* ---------- Payment box ---------- */
+.pay-grid{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:18px;
+}
+.pay-card{
+  background:var(--paper-dim); border:1px solid var(--line); border-radius:14px;
+  padding:22px; display:flex; flex-direction:column; gap:14px;
+  transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+.pay-card:hover{transform:translateY(-3px); border-color:rgba(124,108,246,0.4); box-shadow:var(--shadow);}
+.pay-card-top{display:flex; align-items:center; gap:12px;}
+.pay-logo{
+  width:46px; height:46px; border-radius:12px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+}
+.pay-card-top h3{font-size:1.05rem;}
+.pay-card-top span{display:block; font-size:.76rem; color:var(--ink-soft); margin-top:2px;}
+.pay-value-row{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  background:var(--paper); border:1px dashed var(--line); border-radius:8px;
+  padding:10px 12px;
+}
+.pay-value{
+  font-family:'JetBrains Mono',monospace; font-size:.9rem; direction:ltr; text-align:right;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.pay-copy-btn{
+  flex-shrink:0; background:var(--gold); color:#fff; border:none; border-radius:6px;
+  padding:6px 12px; font-size:.74rem; font-weight:700; cursor:pointer;
+  font-family:'Cairo',sans-serif;
+  transition:background .15s ease;
+}
+.pay-copy-btn:hover{background:var(--rust);}
+.pay-copy-btn.copied{background:#3FA65A;}
+.pay-note{color:var(--ink-soft); font-size:.85rem; line-height:1.6;}
+.pay-card.whatsapp-card{border-color:rgba(37,211,102,0.3);}
+.pay-whatsapp-btn{
+  margin-top:auto; text-align:center; background:#25D366; color:#fff; font-weight:700;
+  border-radius:8px; padding:11px; font-size:.9rem; display:block;
+}
+.pay-whatsapp-btn:hover{filter:brightness(1.08);}
+
+.receipt-box{
+  background:var(--paper-dim); border:1px solid var(--line); border-radius:14px;
+  padding:26px; margin-top:22px;
+}
+.file-drop{
+  border:1.5px dashed var(--line); border-radius:10px; padding:20px;
+  text-align:center; cursor:pointer; transition:border-color .15s ease, background .15s ease;
+  background:var(--paper);
+}
+.file-drop:hover{border-color:var(--gold-soft);}
+.file-drop input[type="file"]{display:none;}
+.file-drop .file-drop-label{font-size:.88rem; color:var(--ink-soft);}
+.file-drop .file-drop-name{font-size:.85rem; color:var(--gold-soft); font-weight:700; margin-top:6px; display:none;}
+
+/* Legacy (kept for backward compatibility if referenced elsewhere) */
 .pay-box{
   background:var(--paper-dim); border:1px solid var(--line); border-radius:12px; padding:30px;
   display:grid; grid-template-columns:repeat(2,1fr); gap:18px;
