@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة تحكم الأدمن</title>
+<meta name="robots" content="noindex, nofollow">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body{font-family:'Cairo',sans-serif;}
+  .skeleton{background:linear-gradient(90deg,#1e293b 25%,#334155 37%,#1e293b 63%);background-size:400% 100%;animation:shimmer 1.4s ease infinite;}
+  @keyframes shimmer{0%{background-position:100% 50%;}100%{background-position:0 50%;}}
+  .tab-btn.active{background:#7C6CF6;color:#fff;}
+  .panel{display:none;}
+  .panel.active{display:block;}
+</style>
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100">
+
+  <div id="auth-gate" class="fixed inset-0 bg-slate-950 flex items-center justify-center z-50">
+    <p class="text-slate-400 text-sm">جاري التحقق من الدخول...</p>
+  </div>
+
+  <div id="app" class="hidden">
+
+    <header class="border-b border-slate-800 sticky top-0 bg-slate-950/90 backdrop-blur z-20">
+      <div class="max-w-6xl mx-auto px-5 py-4 flex items-center justify-between gap-3 flex-wrap">
+        <div class="flex items-center gap-2">
+          <svg viewBox="0 0 40 40" class="w-7 h-7" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 8c-4-3-9-3-14-1v22c5-2 10-2 14 1 4-3 9-3 14-1V7c-5-2-10-2-14 1z" stroke="#7C6CF6" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M20 8v22" stroke="#7C6CF6" stroke-width="2"/>
+          </svg>
+          <div>
+            <div class="font-bold text-sm leading-tight">لوحة تحكم الأدمن</div>
+            <div class="text-xs text-slate-500 leading-tight" id="admin-email">—</div>
+          </div>
+        </div>
+        <button id="logout-btn" class="text-sm font-semibold text-rose-400 hover:text-rose-300 border border-rose-500/30 hover:border-rose-400/50 rounded-lg px-3 py-1.5 transition">تسجيل الخروج</button>
+      </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-5 py-6">
+
+      <div class="flex gap-2 mb-6 flex-wrap">
+        <button class="tab-btn active rounded-lg px-4 py-2 text-sm font-semibold border border-slate-800 text-slate-300" data-tab="overview-panel">نظرة عامة</button>
+        <button class="tab-btn rounded-lg px-4 py-2 text-sm font-semibold border border-slate-800 text-slate-300" data-tab="customers-panel">العملاء</button>
+        <button class="tab-btn rounded-lg px-4 py-2 text-sm font-semibold border border-slate-800 text-slate-300" data-tab="courses-panel">الكورسات</button>
+        <button class="tab-btn rounded-lg px-4 py-2 text-sm font-semibold border border-slate-800 text-slate-300" data-tab="books-panel">الكتب</button>
+        <button class="tab-btn rounded-lg px-4 py-2 text-sm font-semibold border border-slate-800 text-slate-300" data-tab="categories-panel">التصنيفات</button>
+        <button class="tab-btn rounded-lg px-4 py-2 text-sm font-semibold border border-slate-800 text-slate-300" data-tab="orders-panel">الطلبات والاشتراكات</button>
+        <button class="tab-btn rounded-lg px-4 py-2 text-sm font-semibold border border-slate-800 text-slate-300" data-tab="support-panel">الدعم والإشعارات</button>
+        <button class="tab-btn rounded-lg px-4 py-2 text-sm font-semibold border border-slate-800 text-slate-300" data-tab="settings-panel">الإعدادات</button>
+      </div>
+
+      <div id="error-banner" class="hidden mb-4 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300 text-sm px-4 py-3"></div>
+
+      <!-- ================= CUSTOMERS PANEL ================= -->
+      <!-- ================= OVERVIEW PANEL ================= -->
+      <section id="overview-panel" class="panel active">
+        <h1 class="text-xl font-bold mb-4">نظرة عامة</h1>
+
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+          <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+            <p class="text-xs text-slate-500 mb-1">إجمالي الأرباح</p>
+            <p class="text-xl font-bold" id="ov-revenue">—</p>
+          </div>
+          <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+            <p class="text-xs text-slate-500 mb-1">أرباح الشهر ده</p>
+            <p class="text-xl font-bold" id="ov-revenue-month">—</p>
+          </div>
+          <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+            <p class="text-xs text-slate-500 mb-1">عدد الطلاب</p>
+            <p class="text-xl font-bold" id="ov-students">—</p>
+          </div>
+          <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+            <p class="text-xs text-slate-500 mb-1">كورسات وكتب مباعة</p>
+            <p class="text-xl font-bold" id="ov-sold">—</p>
+          </div>
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-4">
+          <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+            <p class="text-sm font-semibold mb-3">المبيعات المؤكدة - آخر 14 يوم</p>
+            <canvas id="ov-sales-chart" height="180"></canvas>
+          </div>
+          <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+            <p class="text-sm font-semibold mb-3">الأكثر مبيعًا</p>
+            <canvas id="ov-top-chart" height="180"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <section id="customers-panel" class="panel">
+        <div class="flex items-center justify-between flex-wrap gap-3 mb-4">
+          <div>
+            <h1 class="text-xl font-bold">بيانات العملاء</h1>
+            <p class="text-sm text-slate-500 mt-0.5"><span id="customers-count">0</span> عميل مسجل</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <input id="customers-search" type="text" placeholder="دور بالاسم أو الإيميل أو الرقم..."
+              class="w-64 max-w-full rounded-lg bg-slate-900 border border-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+            <button id="customers-refresh" class="rounded-lg border border-slate-800 hover:border-slate-700 px-3 py-2 text-sm text-slate-300" title="تحديث">⟳</button>
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-slate-800 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-slate-900 text-slate-400">
+                <tr>
+                  <th class="text-right font-semibold px-4 py-3">الاسم</th>
+                  <th class="text-right font-semibold px-4 py-3">الإيميل</th>
+                  <th class="text-right font-semibold px-4 py-3">الموبايل</th>
+                  <th class="text-right font-semibold px-4 py-3">تاريخ التسجيل</th>
+                  <th class="text-right font-semibold px-4 py-3 w-40">إجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="customers-body" class="divide-y divide-slate-800"></tbody>
+            </table>
+          </div>
+          <div id="customers-empty" class="hidden text-center text-slate-500 text-sm py-14">مفيش عملاء يطابقوا البحث</div>
+        </div>
+      </section>
+
+      <!-- ================= COURSES PANEL ================= -->
+      <section id="courses-panel" class="panel">
+        <div class="flex items-center justify-between flex-wrap gap-3 mb-4">
+          <div>
+            <h1 class="text-xl font-bold">الكورسات</h1>
+            <p class="text-sm text-slate-500 mt-0.5"><span id="courses-count">0</span> كورس</p>
+          </div>
+          <button id="courses-add-toggle" class="rounded-lg bg-gradient-to-l from-violet-500 to-indigo-500 px-4 py-2 text-sm font-semibold">+ إضافة كورس</button>
+        </div>
+
+        <form id="courses-add-form" class="hidden rounded-xl border border-slate-800 bg-slate-900/60 p-5 mb-6 grid gap-3 sm:grid-cols-2">
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold mb-1 text-slate-400">اسم الكورس</label>
+            <input required class="add-title w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm" placeholder="مثال: التسويق بالذكاء الاصطناعي - الجزء الأول">
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold mb-1 text-slate-400">الوصف</label>
+            <textarea class="add-description w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm" rows="2" placeholder="وصف مختصر للكورس"></textarea>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1 text-slate-400">السعر (جنيه)</label>
+            <input required type="number" step="0.01" min="0" class="add-price w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm" placeholder="650">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1 text-slate-400">رابط الصورة</label>
+            <input class="add-image_url w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm" placeholder="https://...">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1 text-slate-400">التصنيف</label>
+            <select class="add-category_id w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm">
+              <option value="">بدون تصنيف</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1 text-slate-400">حالة الكورس</label>
+            <select class="add-status w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm">
+              <option value="published">منشور</option>
+              <option value="draft">مسودة (مخفي عن الزوار)</option>
+            </select>
+          </div>
+          <div class="sm:col-span-2 flex gap-2 justify-end pt-1">
+            <button type="button" class="add-cancel px-4 py-2 rounded-lg text-sm border border-slate-700 text-slate-300 hover:bg-slate-800">إلغاء</button>
+            <button type="submit" class="add-submit px-4 py-2 rounded-lg text-sm bg-violet-500 hover:bg-violet-600 font-semibold">حفظ الكورس</button>
+          </div>
+        </form>
+
+        <div class="rounded-xl border border-slate-800 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-slate-900 text-slate-400">
+                <tr>
+                  <th class="text-right font-semibold px-4 py-3 w-16">صورة</th>
+                  <th class="text-right font-semibold px-4 py-3">الاسم</th>
+                  <th class="text-right font-semibold px-4 py-3">الوصف</th>
+                  <th class="text-right font-semibold px-4 py-3">السعر</th>
+                  <th class="text-right font-semibold px-4 py-3 w-40">إجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="courses-body" class="divide-y divide-slate-800"></tbody>
+            </table>
+          </div>
+          <div id="courses-empty" class="hidden text-center text-slate-500 text-sm py-14">لسه مفيش كورسات مضافة</div>
+        </div>
+      </section>
+
+      <!-- ================= BOOKS PANEL ================= -->
+      <section id="books-panel" class="panel">
+        <div class="flex items-center justify-between flex-wrap gap-3 mb-4">
+          <div>
+            <h1 class="text-xl font-bold">الكتب الإلكترونية</h1>
+            <p class="text-sm text-slate-500 mt-0.5"><span id="books-count">0</span> كتاب</p>
+          </div>
+          <button id="books-add-toggle" class="rounded-lg bg-gradient-to-l from-violet-500 to-indigo-500 px-4 py-2 text-sm font-semibold">+ إضافة كتاب</button>
+        </div>
+
+        <form id="books-add-form" class="hidden rounded-xl border border-slate-800 bg-slate-900/60 p-5 mb-6 grid gap-3 sm:grid-cols-2">
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold mb-1 text-slate-400">اسم الكتاب</label>
+            <input required class="add-title w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm" placeholder="مثال: دليلك الشامل لتسويق منتجك بالذكاء الاصطناعي">
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold mb-1 text-slate-400">الوصف</label>
+            <textarea class="add-description w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm" rows="2" placeholder="وصف مختصر للكتاب"></textarea>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1 text-slate-400">السعر (جنيه)</label>
+            <input required type="number" step="0.01" min="0" class="add-price w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm" placeholder="150">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1 text-slate-400">رابط الصورة (الغلاف)</label>
+            <input class="add-image_url w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm" placeholder="https://...">
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold mb-1 text-slate-400">رابط الملف (PDF)</label>
+            <input class="add-file_url w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm" placeholder="https://... رابط الملف اللي هيوصل للعميل">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1 text-slate-400">التصنيف</label>
+            <select class="add-category_id w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm">
+              <option value="">بدون تصنيف</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1 text-slate-400">حالة الكتاب</label>
+            <select class="add-status w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm">
+              <option value="published">منشور</option>
+              <option value="draft">مسودة (مخفي عن الزوار)</option>
+            </select>
+          </div>
+          <div class="sm:col-span-2 flex gap-2 justify-end pt-1">
+            <button type="button" class="add-cancel px-4 py-2 rounded-lg text-sm border border-slate-700 text-slate-300 hover:bg-slate-800">إلغاء</button>
+            <button type="submit" class="add-submit px-4 py-2 rounded-lg text-sm bg-violet-500 hover:bg-violet-600 font-semibold">حفظ الكتاب</button>
+          </div>
+        </form>
+
+        <div class="rounded-xl border border-slate-800 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-slate-900 text-slate-400">
+                <tr>
+                  <th class="text-right font-semibold px-4 py-3 w-16">صورة</th>
+                  <th class="text-right font-semibold px-4 py-3">الاسم</th>
+                  <th class="text-right font-semibold px-4 py-3">الوصف</th>
+                  <th class="text-right font-semibold px-4 py-3">السعر</th>
+                  <th class="text-right font-semibold px-4 py-3 w-40">إجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="books-body" class="divide-y divide-slate-800"></tbody>
+            </table>
+          </div>
+          <div id="books-empty" class="hidden text-center text-slate-500 text-sm py-14">لسه مفيش كتب مضافة</div>
+        </div>
+      </section>
+
+      <!-- ================= CATEGORIES PANEL ================= -->
+      <section id="categories-panel" class="panel">
+        <div class="flex items-center justify-between flex-wrap gap-3 mb-4">
+          <div>
+            <h1 class="text-xl font-bold">التصنيفات</h1>
+            <p class="text-sm text-slate-500 mt-0.5"><span id="cat-count">0</span> تصنيف</p>
+          </div>
+        </div>
+
+        <form id="cat-add-form" class="flex gap-2 mb-6">
+          <input id="cat-name" required placeholder="اسم التصنيف، مثال: كورسات متقدمة" class="flex-1 rounded-lg bg-slate-900 border border-slate-800 px-3 py-2 text-sm">
+          <button type="submit" class="px-4 py-2 rounded-lg text-sm bg-violet-500 hover:bg-violet-600 font-semibold">+ إضافة</button>
+        </form>
+
+        <div id="cat-list" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2"></div>
+        <p id="cat-empty" class="hidden text-center text-slate-500 text-sm py-14">لسه مفيش تصنيفات مضافة</p>
+      </section>
+
+      <!-- ================= ORDERS & ENROLLMENTS PANEL ================= -->
+      <section id="orders-panel" class="panel">
+        <div class="flex items-center justify-between flex-wrap gap-3 mb-4">
+          <div>
+            <h1 class="text-xl font-bold">الطلبات والمبيعات</h1>
+            <p class="text-sm text-slate-500 mt-0.5"><span id="orders-count">0</span> طلب</p>
+          </div>
+          <button id="orders-add-toggle" class="rounded-lg bg-gradient-to-l from-violet-500 to-indigo-500 px-4 py-2 text-sm font-semibold">+ تسجيل طلب جديد</button>
+        </div>
+
+        <form id="orders-add-form" class="hidden rounded-xl border border-slate-800 bg-slate-900/60 p-5 mb-6 grid gap-3 sm:grid-cols-2">
+          <div>
+            <label class="block text-xs font-semibold mb-1 text-slate-400">اسم الطالب</label>
+            <input required id="order-name" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1 text-slate-400">الإيميل (أو رقم الموبايل)</label>
+            <input required id="order-contact" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm" placeholder="لازم يكون نفس إيميل حساب الطالب عشان يقدر يشوف المحتوى">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1 text-slate-400">نوع المنتج</label>
+            <select id="order-product-type" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm">
+              <option value="course">كورس</option>
+              <option value="book">كتاب</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1 text-slate-400">المنتج</label>
+            <select id="order-product-id" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1 text-slate-400">السعر المدفوع</label>
+            <input required type="number" step="0.01" id="order-price" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1 text-slate-400">وسيلة الدفع</label>
+            <select id="order-payment-method" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm">
+              <option>فودافون كاش</option>
+              <option>تحويل بنكي</option>
+              <option>إنستاباي</option>
+              <option>أخرى</option>
+            </select>
+          </div>
+          <div class="sm:col-span-2 flex gap-2 justify-end pt-1">
+            <button type="button" id="orders-add-cancel" class="px-4 py-2 rounded-lg text-sm border border-slate-700 text-slate-300 hover:bg-slate-800">إلغاء</button>
+            <button type="submit" id="orders-add-submit" class="px-4 py-2 rounded-lg text-sm bg-violet-500 hover:bg-violet-600 font-semibold">حفظ الطلب</button>
+          </div>
+        </form>
+
+        <div class="rounded-xl border border-slate-800 overflow-hidden mb-8">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-slate-900 text-slate-400">
+                <tr>
+                  <th class="text-right font-semibold px-4 py-3">الطالب</th>
+                  <th class="text-right font-semibold px-4 py-3">المنتج</th>
+                  <th class="text-right font-semibold px-4 py-3">السعر</th>
+                  <th class="text-right font-semibold px-4 py-3">وسيلة الدفع</th>
+                  <th class="text-right font-semibold px-4 py-3">الحالة</th>
+                  <th class="text-right font-semibold px-4 py-3">التاريخ</th>
+                  <th class="text-right font-semibold px-4 py-3 w-32">إجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="orders-body" class="divide-y divide-slate-800"></tbody>
+            </table>
+          </div>
+          <div id="orders-empty" class="hidden text-center text-slate-500 text-sm py-14">لسه مفيش طلبات مسجلة</div>
+        </div>
+
+        <div class="border-t border-slate-800 pt-6">
+          <h2 class="text-lg font-bold mb-1">إدارة الاشتراكات مباشرة</h2>
+          <p class="text-sm text-slate-500 mb-4">فعّل أو ألغِ وصول أي إيميل لأي كورس أو كتاب يدويًا، من غير ما يكون له طلب مسجل.</p>
+
+          <form id="enroll-add-form" class="grid gap-3 sm:grid-cols-4 mb-6">
+            <input required id="enroll-email" placeholder="إيميل الطالب" class="rounded-lg bg-slate-900 border border-slate-800 px-3 py-2 text-sm sm:col-span-2">
+            <select id="enroll-product-type" class="rounded-lg bg-slate-900 border border-slate-800 px-3 py-2 text-sm">
+              <option value="course">كورس</option>
+              <option value="book">كتاب</option>
+            </select>
+            <select id="enroll-product-id" class="rounded-lg bg-slate-900 border border-slate-800 px-3 py-2 text-sm"></select>
+            <button type="submit" class="sm:col-span-4 justify-self-end px-4 py-2 rounded-lg text-sm bg-emerald-500 hover:bg-emerald-600 font-semibold">تفعيل الوصول</button>
+          </form>
+
+          <div class="rounded-xl border border-slate-800 overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="bg-slate-900 text-slate-400">
+                  <tr>
+                    <th class="text-right font-semibold px-4 py-3">إيميل الطالب</th>
+                    <th class="text-right font-semibold px-4 py-3">المنتج</th>
+                    <th class="text-right font-semibold px-4 py-3">تاريخ التفعيل</th>
+                    <th class="text-right font-semibold px-4 py-3 w-24">إجراءات</th>
+                  </tr>
+                </thead>
+                <tbody id="enroll-body" class="divide-y divide-slate-800"></tbody>
+              </table>
+            </div>
+            <div id="enroll-empty" class="hidden text-center text-slate-500 text-sm py-14">لسه مفيش اشتراكات مفعّلة</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SUPPORT & NOTIFICATIONS PANEL ================= -->
+      <section id="support-panel" class="panel">
+        <h1 class="text-xl font-bold mb-4">الدعم والإشعارات</h1>
+
+        <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-5 mb-8">
+          <h2 class="text-sm font-bold mb-3">إرسال إشعار جماعي لكل الطلاب</h2>
+          <form id="notif-form" class="grid gap-3">
+            <input id="notif-title" required placeholder="عنوان الإشعار" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm">
+            <textarea id="notif-message" required rows="3" placeholder="نص الإشعار" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm"></textarea>
+            <button type="submit" id="notif-submit" class="self-end px-4 py-2 rounded-lg text-sm bg-violet-500 hover:bg-violet-600 font-semibold">إرسال للكل</button>
+          </form>
+        </div>
+
+        <div class="mb-3 flex items-center justify-between">
+          <h2 class="text-sm font-bold">الإشعارات المرسلة</h2>
+          <span class="text-xs text-slate-500" id="notif-count">0</span>
+        </div>
+        <div id="notif-list" class="flex flex-col gap-2 mb-8"></div>
+        <p id="notif-empty" class="hidden text-center text-slate-500 text-sm py-6">لسه مفيش إشعارات مرسلة</p>
+
+        <div class="border-t border-slate-800 pt-6">
+          <div class="mb-3 flex items-center justify-between">
+            <h2 class="text-sm font-bold">أسئلة واستفسارات الطلاب</h2>
+            <span class="text-xs text-slate-500" id="q-count">0</span>
+          </div>
+          <div id="questions-list" class="flex flex-col gap-3"></div>
+          <p id="questions-empty" class="hidden text-center text-slate-500 text-sm py-10">لسه مفيش أسئلة من الطلاب</p>
+        </div>
+      </section>
+
+      <!-- ================= SETTINGS PANEL ================= -->
+      <section id="settings-panel" class="panel">
+        <h1 class="text-xl font-bold mb-4">الإعدادات</h1>
+
+        <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-5 mb-6 max-w-md">
+          <h2 class="text-sm font-bold mb-3">تغيير كلمة مرور الأدمن</h2>
+          <form id="password-form" class="grid gap-3">
+            <input id="new-password" type="password" required minlength="6" placeholder="كلمة المرور الجديدة" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm">
+            <input id="confirm-password" type="password" required minlength="6" placeholder="تأكيد كلمة المرور" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm">
+            <button type="submit" id="password-submit" class="self-end px-4 py-2 rounded-lg text-sm bg-violet-500 hover:bg-violet-600 font-semibold">حفظ كلمة المرور</button>
+            <p id="password-status" class="hidden text-sm"></p>
+          </form>
+        </div>
+
+        <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-5 max-w-md">
+          <h2 class="text-sm font-bold mb-3">بيانات الاتصال بـ Supabase</h2>
+          <p class="text-xs text-slate-500 mb-3">دي بيانات للعرض بس (Publishable Key مصمم أصلاً إنه يكون ظاهر في كود الموقع). أي مفتاح سري تاني (زي service_role أو مفاتيح بوابة دفع) ميتحطش هنا أو في أي كود بيشتغل في المتصفح — لازم يفضل جوه إعدادات Supabase نفسها أو في Edge Function على السيرفر.</p>
+          <div class="text-xs font-mono bg-slate-950 rounded-lg p-3 break-all text-slate-400 mb-2">
+            URL: https://cayfcvkqjrphbshdysnb.supabase.co
+          </div>
+          <div class="text-xs font-mono bg-slate-950 rounded-lg p-3 break-all text-slate-400">
+            Key: sb_publishable_••••••••••••••••••••Yr3p1Mr
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <div id="delete-modal" class="hidden fixed inset-0 bg-black/60 z-40 flex items-center justify-center px-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 max-w-sm w-full">
+      <h3 class="font-bold mb-2">تأكيد الحذف</h3>
+      <p class="text-sm text-slate-400 mb-5">هتمسح "<span id="delete-target-name"></span>" نهائيًا. الإجراء ده مش قابل للتراجع.</p>
+      <div class="flex gap-2 justify-end">
+        <button id="delete-cancel" class="px-4 py-2 rounded-lg text-sm border border-slate-700 text-slate-300 hover:bg-slate-800">إلغاء</button>
+        <button id="delete-confirm" class="px-4 py-2 rounded-lg text-sm bg-rose-500 hover:bg-rose-600 font-semibold">حذف نهائي</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="lectures-modal" class="hidden fixed inset-0 bg-black/60 z-40 flex items-center justify-center px-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 max-w-lg w-full max-h-[85vh] flex flex-col">
+      <div class="flex items-start justify-between gap-3 mb-4">
+        <div>
+          <h3 class="font-bold">محاضرات الكورس</h3>
+          <p class="text-sm text-slate-500" id="lectures-course-title"></p>
+        </div>
+        <button id="lectures-close" class="text-slate-400 hover:text-slate-200 text-xl leading-none">&times;</button>
+      </div>
+
+      <form id="lecture-add-form" class="flex flex-col gap-2 mb-4 border-b border-slate-800 pb-4">
+        <input id="lecture-title" required placeholder="عنوان المحاضرة" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm">
+        <input id="lecture-video-url" required placeholder="رابط الفيديو أو ملف المحاضرة" class="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm">
+        <div class="flex gap-2 items-center">
+          <input id="lecture-order" type="number" step="1" placeholder="الترتيب" class="w-24 rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm">
+          <button type="submit" id="lecture-add-btn" class="mr-auto px-4 py-2 rounded-lg text-sm bg-violet-500 hover:bg-violet-600 font-semibold">+ إضافة محاضرة</button>
+        </div>
+      </form>
+
+      <div id="lectures-error" class="hidden mb-3 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300 text-xs px-3 py-2"></div>
+
+      <div id="lectures-list" class="flex-1 overflow-y-auto flex flex-col gap-2"></div>
+      <p id="lectures-empty" class="hidden text-center text-slate-500 text-sm py-6">لسه مفيش محاضرات مضافة لهذا الكورس</p>
+    </div>
+  </div>
+
+<script>
+  const SUPABASE_URL = 'https://cayfcvkqjrphbshdysnb.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_4QWsFfheXQVs6lH0-tbwDw_JYr3p1Mr';
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  function showError(msg){
+    const banner = document.getElementById('error-banner');
+    banner.textContent = msg;
+    banner.classList.remove('hidden');
+  }
+  function clearError(){
+    document.getElementById('error-banner').classList.add('hidden');
+  }
+  function escapeHtml(str){
+    return (str ?? '').toString()
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;');
+  }
+  function formatDate(iso){
+    if(!iso) return '—';
+    try{ return new Date(iso).toLocaleDateString('ar-EG', { year:'numeric', month:'short', day:'numeric' }); }
+    catch(e){ return iso; }
+  }
+  function skeletonRows(n, cols){
+    cols = cols || 5;
+    return Array.from({length:n}).map(() =>
+      '<tr>' + Array.from({length:cols}).map(()=>'<td class="px-4 py-3"><div class="skeleton h-4 w-24 rounded"></div></td>').join('') + '</tr>'
+    ).join('');
+  }
+
+  let pendingDelete = null;
+  let categoriesCache = [];
+  const reloadHandlers = {};
+
+  document.getElementById('delete-cancel').addEventListener('click', () => {
+    pendingDelete = null;
+    document.getElementById('delete-modal').classList.add('hidden');
+  });
+  document.getElementById('delete-confirm').addEventListener('click', async () => {
+    if(!pendingDelete) return;
+    const btn = document.getElementById('delete-confirm');
+    btn.disabled = true;
+    btn.textContent = 'جاري الحذف...';
+    const { table, id } = pendingDelete;
+    const { error } = await sb.from(table).delete().eq('id', id);
+    btn.disabled = false;
+    btn.textContent = 'حذف نهائي';
+    document.getElementById('delete-modal').classList.add('hidden');
+    const finishedDelete = pendingDelete;
+    pendingDelete = null;
+    if(error){ showError('فشل الحذف: ' + error.message); return; }
+    reloadHandlers[finishedDelete.table] && reloadHandlers[finishedDelete.table]();
+  });
+
+  // ---------------- Customers panel ----------------
+  (function initCustomers(){
+    let customers = [];
+    const body = document.getElementById('customers-body');
+    const empty = document.getElementById('customers-empty');
+    const count = document.getElementById('customers-count');
+    const search = document.getElementById('customers-search');
+
+    async function load(){
+      clearError();
+      body.innerHTML = skeletonRows(5);
+      const { data, error } = await sb.from('customers').select('*').order('created_at', { ascending: false });
+      if(error){
+        showError('حصل خطأ في تحميل العملاء: ' + error.message);
+        body.innerHTML = ''; count.textContent = '0';
+        return;
+      }
+      customers = data || [];
+      render();
+    }
+    function render(){
+      const q = search.value.trim().toLowerCase();
+      const filtered = !q ? customers : customers.filter(c =>
+        (c.full_name||'').toLowerCase().includes(q) ||
+        (c.email||'').toLowerCase().includes(q) ||
+        (c.phone||'').toLowerCase().includes(q));
+      count.textContent = customers.length;
+      if(filtered.length === 0){ body.innerHTML=''; empty.classList.remove('hidden'); return; }
+      empty.classList.add('hidden');
+      body.innerHTML = filtered.map(c => `
+        <tr data-id="${c.id}" class="hover:bg-slate-900/60">
+          <td class="px-4 py-3">
+            <span class="view-name">${escapeHtml(c.full_name)}</span>
+            <input class="edit-name hidden w-full rounded bg-slate-800 border border-slate-700 px-2 py-1 text-sm" value="${escapeHtml(c.full_name)}">
+          </td>
+          <td class="px-4 py-3">
+            <span class="view-email">${escapeHtml(c.email)}</span>
+            <input class="edit-email hidden w-full rounded bg-slate-800 border border-slate-700 px-2 py-1 text-sm" value="${escapeHtml(c.email)}">
+          </td>
+          <td class="px-4 py-3" dir="ltr" style="text-align:right;">
+            <span class="view-phone">${escapeHtml(c.phone)}</span>
+            <input class="edit-phone hidden w-full rounded bg-slate-800 border border-slate-700 px-2 py-1 text-sm" value="${escapeHtml(c.phone)}" dir="ltr">
+          </td>
+          <td class="px-4 py-3 text-slate-400">${formatDate(c.created_at)}</td>
+          <td class="px-4 py-3">
+            <div class="view-actions flex gap-2">
+              <button class="edit-btn text-violet-400 hover:text-violet-300 text-xs font-semibold">تعديل</button>
+              <button class="delete-btn text-rose-400 hover:text-rose-300 text-xs font-semibold">حذف</button>
+            </div>
+            <div class="edit-actions hidden flex gap-2">
+              <button class="save-btn text-emerald-400 hover:text-emerald-300 text-xs font-semibold">حفظ</button>
+              <button class="cancel-btn text-slate-400 hover:text-slate-300 text-xs font-semibold">إلغاء</button>
+            </div>
+          </td>
+        </tr>`).join('');
+    }
+
+    body.addEventListener('click', async (e) => {
+      const row = e.target.closest('tr'); if(!row) return;
+      const id = row.dataset.id;
+      if(e.target.classList.contains('edit-btn')){
+        row.querySelectorAll('.view-name,.view-email,.view-phone,.view-actions').forEach(el=>el.classList.add('hidden'));
+        row.querySelectorAll('.edit-name,.edit-email,.edit-phone,.edit-actions').forEach(el=>el.classList.remove('hidden'));
+      }
+      if(e.target.classList.contains('cancel-btn')) render();
+      if(e.target.classList.contains('save-btn')){
+        const full_name = row.querySelector('.edit-name').value.trim();
+        const email = row.querySelector('.edit-email').value.trim();
+        const phone = row.querySelector('.edit-phone').value.trim();
+        e.target.disabled = true; e.target.textContent = 'جاري الحفظ...';
+        const { error } = await sb.from('customers').update({ full_name, email, phone }).eq('id', id);
+        if(error){ showError('فشل التعديل: ' + error.message); e.target.disabled=false; e.target.textContent='حفظ'; return; }
+        await load();
+      }
+      if(e.target.classList.contains('delete-btn')){
+        pendingDelete = { table:'customers', id, name: (customers.find(c=>String(c.id)===String(id))||{}).full_name || '' };
+        document.getElementById('delete-target-name').textContent = pendingDelete.name;
+        document.getElementById('delete-modal').classList.remove('hidden');
+      }
+    });
+
+    search.addEventListener('input', render);
+    document.getElementById('customers-refresh').addEventListener('click', load);
+    reloadHandlers['customers'] = load;
+    window.__loadCustomers = load;
+  })();
+
+  // ---------------- Generic catalog panel (courses / books) ----------------
+  function initCatalogPanel(table, prefix){
+    let items = [];
+    const body = document.getElementById(prefix + '-body');
+    const empty = document.getElementById(prefix + '-empty');
+    const count = document.getElementById(prefix + '-count');
+    const addToggle = document.getElementById(prefix + '-add-toggle');
+    const addForm = document.getElementById(prefix + '-add-form');
+
+    async function load(){
+      clearError();
+      body.innerHTML = skeletonRows(3, 5);
+      const { data, error } = await sb.from(table).select('*').order('created_at', { ascending: false });
+      if(error){
+        showError(`حصل خطأ في تحميل ${table}: ` + error.message + '. تأكد إن اسم الجدول والأعمدة (title, description, price, image_url) مطابقين لما هو موجود في Supabase.');
+        body.innerHTML = ''; count.textContent = '0';
+        return;
+      }
+      items = data || [];
+      render();
+    }
+
+    function categoryOptions(selectedId){
+      let html = '<option value="">بدون تصنيف</option>';
+      categoriesCache.forEach(cat => {
+        const sel = String(selectedId) === String(cat.id) ? 'selected' : '';
+        html += `<option value="${cat.id}" ${sel}>${escapeHtml(cat.name)}</option>`;
+      });
+      return html;
+    }
+
+    function render(){
+      count.textContent = items.length;
+      if(items.length === 0){ body.innerHTML=''; empty.classList.remove('hidden'); return; }
+      empty.classList.add('hidden');
+      const isBooks = table === 'books';
+      const isCourses = table === 'courses';
+      body.innerHTML = items.map(it => `
+        <tr data-id="${it.id}" class="hover:bg-slate-900/60 align-top">
+          <td class="px-4 py-3">
+            ${it.image_url
+              ? `<img src="${escapeHtml(it.image_url)}" class="w-10 h-10 rounded object-cover border border-slate-800" onerror="this.style.display='none'">`
+              : `<div class="w-10 h-10 rounded bg-slate-800 flex items-center justify-center text-slate-600 text-xs">—</div>`}
+          </td>
+          <td class="px-4 py-3">
+            <span class="view-title font-semibold">${escapeHtml(it.title)}</span>
+            <span class="inline-block mr-1 text-xs px-2 py-0.5 rounded-full ${it.status === 'draft' ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'}">${it.status === 'draft' ? 'مسودة' : 'منشور'}</span>
+            ${isBooks && it.file_url ? `<a href="${escapeHtml(it.file_url)}" target="_blank" rel="noopener" class="block text-xs text-violet-400 hover:underline mt-1">رابط الملف ↗</a>` : ''}
+            <input class="edit-title hidden w-full rounded bg-slate-800 border border-slate-700 px-2 py-1 text-sm mt-1" value="${escapeHtml(it.title)}">
+            <input class="edit-image_url hidden w-full rounded bg-slate-800 border border-slate-700 px-2 py-1 text-xs mt-1" value="${escapeHtml(it.image_url)}" placeholder="رابط الصورة">
+            ${isBooks ? `<input class="edit-file_url hidden w-full rounded bg-slate-800 border border-slate-700 px-2 py-1 text-xs mt-1" value="${escapeHtml(it.file_url)}" placeholder="رابط الملف (PDF)">` : ''}
+            <select class="edit-category_id hidden w-full rounded bg-slate-800 border border-slate-700 px-2 py-1 text-xs mt-1">${categoryOptions(it.category_id)}</select>
+            <select class="edit-status hidden w-full rounded bg-slate-800 border border-slate-700 px-2 py-1 text-xs mt-1">
+              <option value="published" ${it.status !== 'draft' ? 'selected' : ''}>منشور</option>
+              <option value="draft" ${it.status === 'draft' ? 'selected' : ''}>مسودة</option>
+            </select>
+          </td>
+          <td class="px-4 py-3 text-slate-400 max-w-xs">
+            <span class="view-description">${escapeHtml(it.description) || '—'}</span>
+            <textarea class="edit-description hidden w-full rounded bg-slate-800 border border-slate-700 px-2 py-1 text-sm mt-1" rows="2">${escapeHtml(it.description)}</textarea>
+          </td>
+          <td class="px-4 py-3">
+            <span class="view-price">${it.price != null ? it.price + ' جنيه' : '—'}</span>
+            <input type="number" step="0.01" class="edit-price hidden w-24 rounded bg-slate-800 border border-slate-700 px-2 py-1 text-sm mt-1" value="${it.price != null ? it.price : ''}">
+          </td>
+          <td class="px-4 py-3">
+            <div class="view-actions flex gap-2 flex-wrap">
+              ${isCourses ? `<button class="lectures-btn text-amber-400 hover:text-amber-300 text-xs font-semibold">المحاضرات</button>` : ''}
+              <button class="edit-btn text-violet-400 hover:text-violet-300 text-xs font-semibold">تعديل</button>
+              <button class="delete-btn text-rose-400 hover:text-rose-300 text-xs font-semibold">حذف</button>
+            </div>
+            <div class="edit-actions hidden flex gap-2">
+              <button class="save-btn text-emerald-400 hover:text-emerald-300 text-xs font-semibold">حفظ</button>
+              <button class="cancel-btn text-slate-400 hover:text-slate-300 text-xs font-semibold">إلغاء</button>
+            </div>
+          </td>
+        </tr>`).join('');
+    }
+
+    body.addEventListener('click', async (e) => {
+      const row = e.target.closest('tr'); if(!row) return;
+      const id = row.dataset.id;
+      if(e.target.classList.contains('lectures-btn')){
+        openLecturesModal(id, (items.find(it=>String(it.id)===String(id))||{}).title || '');
+      }
+      if(e.target.classList.contains('edit-btn')){
+        row.querySelectorAll('.view-title,.view-description,.view-price,.view-actions').forEach(el=>el.classList.add('hidden'));
+        row.querySelectorAll('.edit-title,.edit-image_url,.edit-file_url,.edit-description,.edit-price,.edit-category_id,.edit-status,.edit-actions').forEach(el=>el.classList.remove('hidden'));
+      }
+      if(e.target.classList.contains('cancel-btn')) render();
+      if(e.target.classList.contains('save-btn')){
+        const title = row.querySelector('.edit-title').value.trim();
+        const image_url = row.querySelector('.edit-image_url').value.trim();
+        const description = row.querySelector('.edit-description').value.trim();
+        const priceVal = row.querySelector('.edit-price').value;
+        const price = priceVal === '' ? null : parseFloat(priceVal);
+        const catVal = row.querySelector('.edit-category_id').value;
+        const status = row.querySelector('.edit-status').value;
+        const payload = { title, description, price, image_url, status, category_id: catVal === '' ? null : parseInt(catVal, 10) };
+        if(table === 'books'){
+          const fileEl = row.querySelector('.edit-file_url');
+          if(fileEl) payload.file_url = fileEl.value.trim();
+        }
+        e.target.disabled = true; e.target.textContent = 'جاري الحفظ...';
+        const { error } = await sb.from(table).update(payload).eq('id', id);
+        if(error){ showError('فشل التعديل: ' + error.message); e.target.disabled=false; e.target.textContent='حفظ'; return; }
+        await load();
+      }
+      if(e.target.classList.contains('delete-btn')){
+        pendingDelete = { table, id, name: (items.find(it=>String(it.id)===String(id))||{}).title || '' };
+        document.getElementById('delete-target-name').textContent = pendingDelete.name;
+        document.getElementById('delete-modal').classList.remove('hidden');
+      }
+    });
+
+    addToggle.addEventListener('click', () => {
+      addForm.classList.toggle('hidden');
+      const catSelect = addForm.querySelector('.add-category_id');
+      if(catSelect) catSelect.innerHTML = categoryOptions('');
+    });
+    addForm.querySelector('.add-cancel').addEventListener('click', () => {
+      addForm.classList.add('hidden');
+      addForm.reset();
+    });
+    addForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const title = addForm.querySelector('.add-title').value.trim();
+      const description = addForm.querySelector('.add-description').value.trim();
+      const priceVal = addForm.querySelector('.add-price').value;
+      const price = priceVal === '' ? null : parseFloat(priceVal);
+      const image_url = addForm.querySelector('.add-image_url').value.trim();
+      const catEl = addForm.querySelector('.add-category_id');
+      const statusEl = addForm.querySelector('.add-status');
+      const payload = {
+        title, description, price, image_url,
+        category_id: (catEl && catEl.value !== '') ? parseInt(catEl.value, 10) : null,
+        status: statusEl ? statusEl.value : 'published'
+      };
+      if(table === 'books'){
+        const fileEl = addForm.querySelector('.add-file_url');
+        if(fileEl) payload.file_url = fileEl.value.trim();
+      }
+      const submitBtn = addForm.querySelector('.add-submit');
+      submitBtn.disabled = true; submitBtn.textContent = 'جاري الحفظ...';
+      const { error } = await sb.from(table).insert(payload);
+      submitBtn.disabled = false; submitBtn.textContent = table === 'courses' ? 'حفظ الكورس' : 'حفظ الكتاب';
+      if(error){ showError('فشل إضافة العنصر: ' + error.message); return; }
+      addForm.reset();
+      addForm.classList.add('hidden');
+      await load();
+    });
+
+    reloadHandlers[table] = load;
+    return { load };
+  }
+
+  const coursesPanel = initCatalogPanel('courses', 'courses');
+  const booksPanel = initCatalogPanel('books', 'books');
+
+  // ---------------- Lectures modal (per course) ----------------
+  let currentLecturesCourseId = null;
+  const lecturesModal = document.getElementById('lectures-modal');
+  const lecturesList = document.getElementById('lectures-list');
+  const lecturesEmpty = document.getElementById('lectures-empty');
+  const lecturesErrorEl = document.getElementById('lectures-error');
+  const lectureAddForm = document.getElementById('lecture-add-form');
+
+  function showLecturesError(msg){
+    lecturesErrorEl.textContent = msg;
+    lecturesErrorEl.classList.remove('hidden');
+  }
+  function clearLecturesError(){ lecturesErrorEl.classList.add('hidden'); }
+
+  let currentLectures = [];
+
+  async function loadLectures(courseId){
+    clearLecturesError();
+    lecturesList.innerHTML = skeletonRows(2, 1).replace(/<tr>/g,'<div class="w-full">').replace(/<\/tr>/g,'</div>');
+    const { data, error } = await sb.from('lectures').select('*').eq('course_id', courseId)
+      .order('order_num', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: true });
+    if(error){
+      lecturesList.innerHTML = '';
+      showLecturesError('حصل خطأ في تحميل المحاضرات: ' + error.message + '. تأكد إن جدول lectures وعمود course_id متطابقين مع نوع id بتاع جدول courses.');
+      return;
+    }
+    currentLectures = data || [];
+    renderLectures();
+  }
+
+  function renderLectures(){
+    if(currentLectures.length === 0){
+      lecturesList.innerHTML = '';
+      lecturesEmpty.classList.remove('hidden');
+      return;
+    }
+    lecturesEmpty.classList.add('hidden');
+    lecturesList.innerHTML = currentLectures.map((lec, i) => `
+      <div class="bg-slate-800/60 rounded-lg px-3 py-2" data-lecture-id="${lec.id}">
+        <div class="view-row flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <div class="text-sm font-semibold truncate">${lec.order_num != null ? lec.order_num : i+1}. ${escapeHtml(lec.title)}</div>
+            <a href="${escapeHtml(lec.video_url)}" target="_blank" rel="noopener" class="text-xs text-violet-400 hover:underline truncate block">${escapeHtml(lec.video_url)}</a>
+          </div>
+          <div class="flex gap-2 flex-shrink-0">
+            <button class="lecture-edit-btn text-amber-400 hover:text-amber-300 text-xs font-semibold">تعديل</button>
+            <button class="lecture-delete-btn text-rose-400 hover:text-rose-300 text-xs font-semibold">حذف</button>
+          </div>
+        </div>
+        <div class="edit-row hidden flex flex-col gap-2 mt-1">
+          <input class="lec-edit-title w-full rounded bg-slate-900 border border-slate-700 px-2 py-1.5 text-sm" value="${escapeHtml(lec.title)}">
+          <input class="lec-edit-video w-full rounded bg-slate-900 border border-slate-700 px-2 py-1.5 text-sm" value="${escapeHtml(lec.video_url)}">
+          <div class="flex gap-2 items-center">
+            <input type="number" step="1" class="lec-edit-order w-20 rounded bg-slate-900 border border-slate-700 px-2 py-1.5 text-sm" value="${lec.order_num != null ? lec.order_num : ''}" placeholder="ترتيب">
+            <div class="flex gap-2 mr-auto">
+              <button class="lecture-save-btn text-emerald-400 hover:text-emerald-300 text-xs font-semibold">حفظ</button>
+              <button class="lecture-cancel-btn text-slate-400 hover:text-slate-300 text-xs font-semibold">إلغاء</button>
+            </div>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  function openLecturesModal(courseId, courseTitle){
+    currentLecturesCourseId = courseId;
+    document.getElementById('lectures-course-title').textContent = courseTitle;
+    lectureAddForm.reset();
+    lecturesModal.classList.remove('hidden');
+    loadLectures(courseId);
+  }
+
+  document.getElementById('lectures-close').addEventListener('click', () => {
+    lecturesModal.classList.add('hidden');
+    currentLecturesCourseId = null;
+  });
+
+  lectureAddForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if(!currentLecturesCourseId) return;
+    const title = document.getElementById('lecture-title').value.trim();
+    const video_url = document.getElementById('lecture-video-url').value.trim();
+    const orderVal = document.getElementById('lecture-order').value;
+    const order_num = orderVal === '' ? currentLectures.length + 1 : parseInt(orderVal, 10);
+    const btn = document.getElementById('lecture-add-btn');
+    btn.disabled = true; btn.textContent = 'جاري الإضافة...';
+    const { error } = await sb.from('lectures').insert({ course_id: currentLecturesCourseId, title, video_url, order_num });
+    btn.disabled = false; btn.textContent = '+ إضافة محاضرة';
+    if(error){ showLecturesError('فشلت إضافة المحاضرة: ' + error.message); return; }
+    lectureAddForm.reset();
+    loadLectures(currentLecturesCourseId);
+  });
+
+  lecturesList.addEventListener('click', async (e) => {
+    const row = e.target.closest('[data-lecture-id]');
+    if(!row) return;
+    const lectureId = row.dataset.lectureId;
+
+    if(e.target.classList.contains('lecture-edit-btn')){
+      row.querySelector('.view-row').classList.add('hidden');
+      row.querySelector('.edit-row').classList.remove('hidden');
+      return;
+    }
+    if(e.target.classList.contains('lecture-cancel-btn')){
+      renderLectures();
+      return;
+    }
+    if(e.target.classList.contains('lecture-save-btn')){
+      const title = row.querySelector('.lec-edit-title').value.trim();
+      const video_url = row.querySelector('.lec-edit-video').value.trim();
+      const orderVal = row.querySelector('.lec-edit-order').value;
+      const order_num = orderVal === '' ? null : parseInt(orderVal, 10);
+      e.target.disabled = true; e.target.textContent = 'جاري الحفظ...';
+      const { error } = await sb.from('lectures').update({ title, video_url, order_num }).eq('id', lectureId);
+      if(error){ showLecturesError('فشل تعديل المحاضرة: ' + error.message); e.target.disabled = false; e.target.textContent = 'حفظ'; return; }
+      await loadLectures(currentLecturesCourseId);
+      return;
+    }
+    if(e.target.classList.contains('lecture-delete-btn')){
+      if(!confirm('متأكد إنك عايز تمسح المحاضرة دي؟')) return;
+      const { error } = await sb.from('lectures').delete().eq('id', lectureId);
+      if(error){ showLecturesError('فشل الحذف: ' + error.message); return; }
+      loadLectures(currentLecturesCourseId);
+    }
+  });
+
+  // ---------------- Shared: categories + products cache ----------------
+  async function loadCategoriesCache(){
+    const { data, error } = await sb.from('categories').select('*').order('name', { ascending: true });
+    if(!error) categoriesCache = data || [];
+  }
+
+  let productsCache = { course: [], book: [] };
+  async function loadProductsCache(){
+    const [coursesRes, booksRes] = await Promise.all([
+      sb.from('courses').select('id,title').order('title', { ascending: true }),
+      sb.from('books').select('id,title').order('title', { ascending: true })
+    ]);
+    productsCache.course = coursesRes.data || [];
+    productsCache.book = booksRes.data || [];
+  }
+  function fillProductSelect(typeSelect, productSelect){
+    const type = typeSelect.value;
+    const list = productsCache[type] || [];
+    productSelect.innerHTML = list.length
+      ? list.map(p => `<option value="${p.id}">${escapeHtml(p.title)}</option>`).join('')
+      : '<option value="">لا يوجد عناصر — ضيف كورس أو كتاب الأول</option>';
+  }
+
+  // ---------------- Categories panel ----------------
+  (function initCategories(){
+    const listEl = document.getElementById('cat-list');
+    const emptyEl = document.getElementById('cat-empty');
+    const countEl = document.getElementById('cat-count');
+    const form = document.getElementById('cat-add-form');
+
+    async function load(){
+      clearError();
+      listEl.innerHTML = skeletonRows(3, 1).replace(/<tr>/g,'<div>').replace(/<\/tr>/g,'</div>');
+      await loadCategoriesCache();
+      render();
+    }
+    function render(){
+      countEl.textContent = categoriesCache.length;
+      if(categoriesCache.length === 0){ listEl.innerHTML=''; emptyEl.classList.remove('hidden'); return; }
+      emptyEl.classList.add('hidden');
+      listEl.innerHTML = categoriesCache.map(cat => `
+        <div class="flex items-center justify-between gap-2 bg-slate-900/60 border border-slate-800 rounded-lg px-3 py-2">
+          <span class="text-sm">${escapeHtml(cat.name)}</span>
+          <button class="cat-delete-btn text-rose-400 hover:text-rose-300 text-xs font-semibold" data-id="${cat.id}">حذف</button>
+        </div>`).join('');
+    }
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nameInput = document.getElementById('cat-name');
+      const name = nameInput.value.trim();
+      if(!name) return;
+      const btn = form.querySelector('button[type="submit"]');
+      btn.disabled = true; btn.textContent = 'جاري الإضافة...';
+      const { error } = await sb.from('categories').insert({ name });
+      btn.disabled = false; btn.textContent = '+ إضافة';
+      if(error){ showError('فشلت إضافة التصنيف: ' + error.message); return; }
+      nameInput.value = '';
+      await load();
+    });
+    listEl.addEventListener('click', async (e) => {
+      if(!e.target.classList.contains('cat-delete-btn')) return;
+      const id = e.target.dataset.id;
+      if(!confirm('هتمسح التصنيف ده؟ الكورسات/الكتب اللي عليه هتفضل موجودة بس من غير تصنيف.')) return;
+      const { error } = await sb.from('categories').delete().eq('id', id);
+      if(error){ showError('فشل الحذف: ' + error.message); return; }
+      await load();
+    });
+
+    reloadHandlers['categories'] = load;
+    window.__loadCategories = load;
+  })();
+
+  // ---------------- Orders + enrollments panel ----------------
+  (function initOrders(){
+    let orders = [];
+    let enrollments = [];
+    const ordersBody = document.getElementById('orders-body');
+    const ordersEmpty = document.getElementById('orders-empty');
+    const ordersCount = document.getElementById('orders-count');
+    const ordersAddToggle = document.getElementById('orders-add-toggle');
+    const ordersAddForm = document.getElementById('orders-add-form');
+    const orderTypeSelect = document.getElementById('order-product-type');
+    const orderProductSelect = document.getElementById('order-product-id');
+
+    const enrollBody = document.getElementById('enroll-body');
+    const enrollEmpty = document.getElementById('enroll-empty');
+    const enrollForm = document.getElementById('enroll-add-form');
+    const enrollTypeSelect = document.getElementById('enroll-product-type');
+    const enrollProductSelect = document.getElementById('enroll-product-id');
+
+    function productTitle(type, id){
+      if(!type || !id) return 'لسه مش محدد';
+      const list = productsCache[type] || [];
+      const found = list.find(p => String(p.id) === String(id));
+      return found ? found.title : (type === 'course' ? 'كورس محذوف' : 'كتاب محذوف');
+    }
+
+    async function load(){
+      clearError();
+      ordersBody.innerHTML = skeletonRows(4, 7);
+      await loadProductsCache();
+      fillProductSelect(orderTypeSelect, orderProductSelect);
+      fillProductSelect(enrollTypeSelect, enrollProductSelect);
+
+      const [ordersRes, enrollRes] = await Promise.all([
+        sb.from('orders').select('*').order('created_at', { ascending: false }),
+        sb.from('enrollments').select('*').order('created_at', { ascending: false })
+      ]);
+      if(ordersRes.error){ showError('حصل خطأ في تحميل الطلبات: ' + ordersRes.error.message); ordersBody.innerHTML=''; return; }
+      orders = ordersRes.data || [];
+      enrollments = enrollRes.data || [];
+      renderOrders();
+      renderEnrollments();
+    }
+
+    function renderOrders(){
+      ordersCount.textContent = orders.length;
+      if(orders.length === 0){ ordersBody.innerHTML=''; ordersEmpty.classList.remove('hidden'); return; }
+      ordersEmpty.classList.add('hidden');
+      const statusBadge = { pending:'bg-amber-500/20 text-amber-300', confirmed:'bg-emerald-500/20 text-emerald-300', rejected:'bg-rose-500/20 text-rose-300' };
+      const statusLabel = { pending:'قيد المراجعة', confirmed:'مؤكد', rejected:'مرفوض' };
+      ordersBody.innerHTML = orders.map(o => `
+        <tr data-id="${o.id}">
+          <td class="px-4 py-3">
+            <div class="font-semibold">${escapeHtml(o.student_name)}</div>
+            <div class="text-xs text-slate-500">${escapeHtml(o.contact)}</div>
+          </td>
+          <td class="px-4 py-3">
+            ${escapeHtml(productTitle(o.product_type, o.product_id))}
+            ${o.receipt_url ? `<a href="${escapeHtml(o.receipt_url)}" target="_blank" rel="noopener" class="block text-xs text-violet-400 hover:underline mt-1">صورة الإيصال ↗</a>` : ''}
+          </td>
+          <td class="px-4 py-3">${o.price != null ? o.price + ' جنيه' : '—'}</td>
+          <td class="px-4 py-3">${escapeHtml(o.payment_method || '—')}</td>
+          <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded-full ${statusBadge[o.status]||''}">${statusLabel[o.status]||o.status}</span></td>
+          <td class="px-4 py-3 text-slate-400">${formatDate(o.created_at)}</td>
+          <td class="px-4 py-3">
+            ${o.status === 'pending' ? `
+              <div class="flex gap-2">
+                <button class="order-confirm-btn text-emerald-400 hover:text-emerald-300 text-xs font-semibold">تأكيد</button>
+                <button class="order-reject-btn text-rose-400 hover:text-rose-300 text-xs font-semibold">رفض</button>
+              </div>` : `<button class="order-delete-btn text-slate-500 hover:text-rose-300 text-xs">حذف</button>`}
+          </td>
+        </tr>`).join('');
+    }
+
+    function renderEnrollments(){
+      if(enrollments.length === 0){ enrollBody.innerHTML=''; enrollEmpty.classList.remove('hidden'); return; }
+      enrollEmpty.classList.add('hidden');
+      enrollBody.innerHTML = enrollments.map(en => `
+        <tr data-id="${en.id}">
+          <td class="px-4 py-3">${escapeHtml(en.student_email)}</td>
+          <td class="px-4 py-3">${escapeHtml(productTitle(en.product_type, en.product_id))} <span class="text-xs text-slate-500">(${en.product_type === 'course' ? 'كورس' : 'كتاب'})</span></td>
+          <td class="px-4 py-3 text-slate-400">${formatDate(en.created_at)}</td>
+          <td class="px-4 py-3"><button class="enroll-revoke-btn text-rose-400 hover:text-rose-300 text-xs font-semibold">إلغاء</button></td>
+        </tr>`).join('');
+    }
+
+    orderTypeSelect.addEventListener('change', () => fillProductSelect(orderTypeSelect, orderProductSelect));
+    enrollTypeSelect.addEventListener('change', () => fillProductSelect(enrollTypeSelect, enrollProductSelect));
+
+    ordersAddToggle.addEventListener('click', () => ordersAddForm.classList.toggle('hidden'));
+    document.getElementById('orders-add-cancel').addEventListener('click', () => {
+      ordersAddForm.classList.add('hidden');
+      ordersAddForm.reset();
+    });
+
+    ordersAddForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const student_name = document.getElementById('order-name').value.trim();
+      const contact = document.getElementById('order-contact').value.trim();
+      const product_type = orderTypeSelect.value;
+      const product_id = orderProductSelect.value;
+      const price = parseFloat(document.getElementById('order-price').value);
+      const payment_method = document.getElementById('order-payment-method').value;
+      if(!product_id){ showError('لازم تضيف كورس أو كتاب الأول قبل ما تسجل طلب.'); return; }
+      const btn = document.getElementById('orders-add-submit');
+      btn.disabled = true; btn.textContent = 'جاري الحفظ...';
+      const { error } = await sb.from('orders').insert({ student_name, contact, product_type, product_id, price, payment_method });
+      btn.disabled = false; btn.textContent = 'حفظ الطلب';
+      if(error){ showError('فشل تسجيل الطلب: ' + error.message); return; }
+      ordersAddForm.reset();
+      ordersAddForm.classList.add('hidden');
+      await load();
+    });
+
+    ordersBody.addEventListener('click', async (e) => {
+      const row = e.target.closest('tr'); if(!row) return;
+      const id = row.dataset.id;
+      const order = orders.find(o => String(o.id) === String(id));
+      if(!order) return;
+
+      if(e.target.classList.contains('order-confirm-btn')){
+        e.target.disabled = true; e.target.textContent = 'جاري التأكيد...';
+        const { error: updateErr } = await sb.from('orders').update({ status: 'confirmed' }).eq('id', id);
+        if(updateErr){ showError('فشل تأكيد الطلب: ' + updateErr.message); await load(); return; }
+        if(order.product_type && order.product_id){
+          const { error: enrollErr } = await sb.from('enrollments')
+            .upsert({ student_email: order.contact, product_type: order.product_type, product_id: order.product_id },
+                    { onConflict: 'student_email,product_type,product_id' });
+          if(enrollErr){ showError('اتأكد الطلب بس حصل خطأ في تفعيل الوصول: ' + enrollErr.message); }
+        }
+        await load();
+      }
+      if(e.target.classList.contains('order-reject-btn')){
+        const { error } = await sb.from('orders').update({ status: 'rejected' }).eq('id', id);
+        if(error){ showError('فشل رفض الطلب: ' + error.message); return; }
+        await load();
+      }
+      if(e.target.classList.contains('order-delete-btn')){
+        if(!confirm('تمسح الطلب ده نهائي؟')) return;
+        const { error } = await sb.from('orders').delete().eq('id', id);
+        if(error){ showError('فشل الحذف: ' + error.message); return; }
+        await load();
+      }
+    });
+
+    enrollForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const student_email = document.getElementById('enroll-email').value.trim();
+      const product_type = enrollTypeSelect.value;
+      const product_id = enrollProductSelect.value;
+      if(!product_id){ showError('لازم تضيف كورس أو كتاب الأول.'); return; }
+      const btn = enrollForm.querySelector('button[type="submit"]');
+      btn.disabled = true; btn.textContent = 'جاري التفعيل...';
+      const { error } = await sb.from('enrollments')
+        .upsert({ student_email, product_type, product_id }, { onConflict: 'student_email,product_type,product_id' });
+      btn.disabled = false; btn.textContent = 'تفعيل الوصول';
+      if(error){ showError('فشل تفعيل الوصول: ' + error.message); return; }
+      enrollForm.reset();
+      await load();
+    });
+
+    enrollBody.addEventListener('click', async (e) => {
+      if(!e.target.classList.contains('enroll-revoke-btn')) return;
+      const row = e.target.closest('tr');
+      const id = row.dataset.id;
+      if(!confirm('تلغي وصول الطالب ده للمنتج ده؟')) return;
+      const { error } = await sb.from('enrollments').delete().eq('id', id);
+      if(error){ showError('فشل الإلغاء: ' + error.message); return; }
+      await load();
+    });
+
+    reloadHandlers['orders'] = load;
+    window.__loadOrders = load;
+  })();
+
+  // ---------------- Overview panel ----------------
+  (function initOverview(){
+    let salesChart = null;
+    let topChart = null;
+
+    async function load(){
+      clearError();
+      const { data: confirmedOrders, error } = await sb.from('orders').select('*').eq('status', 'confirmed');
+      const { data: allCustomers } = await sb.from('customers').select('id');
+
+      if(error){
+        showError('حصل خطأ في تحميل الإحصائيات: ' + error.message);
+        return;
+      }
+
+      const orders = confirmedOrders || [];
+      const totalRevenue = orders.reduce((sum, o) => sum + (Number(o.price) || 0), 0);
+      const now = new Date();
+      const monthRevenue = orders
+        .filter(o => { const d = new Date(o.created_at); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); })
+        .reduce((sum, o) => sum + (Number(o.price) || 0), 0);
+
+      document.getElementById('ov-revenue').textContent = totalRevenue.toLocaleString('ar-EG') + ' جنيه';
+      document.getElementById('ov-revenue-month').textContent = monthRevenue.toLocaleString('ar-EG') + ' جنيه';
+      document.getElementById('ov-students').textContent = (allCustomers || []).length;
+      document.getElementById('ov-sold').textContent = orders.length;
+
+      // Last 14 days sales chart
+      const days = [];
+      const dayLabels = [];
+      for(let i = 13; i >= 0; i--){
+        const d = new Date(now); d.setDate(d.getDate() - i); d.setHours(0,0,0,0);
+        days.push(d);
+        dayLabels.push(d.toLocaleDateString('ar-EG', { day:'numeric', month:'short' }));
+      }
+      const dayTotals = days.map(day => {
+        const next = new Date(day); next.setDate(next.getDate() + 1);
+        return orders
+          .filter(o => { const d = new Date(o.created_at); return d >= day && d < next; })
+          .reduce((sum, o) => sum + (Number(o.price) || 0), 0);
+      });
+
+      const salesCtx = document.getElementById('ov-sales-chart');
+      if(salesChart) salesChart.destroy();
+      if(typeof Chart !== 'undefined' && salesCtx){
+        salesChart = new Chart(salesCtx, {
+          type: 'bar',
+          data: { labels: dayLabels, datasets: [{ label: 'مبيعات (جنيه)', data: dayTotals, backgroundColor: '#7C6CF6', borderRadius: 4 }] },
+          options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
+              y: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } }
+            }
+          }
+        });
+      }
+
+      // Top-selling products chart
+      const counts = {};
+      orders.forEach(o => {
+        const key = o.product_type + ':' + o.product_id;
+        counts[key] = (counts[key] || 0) + 1;
+      });
+      const topEntries = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, 6);
+      const topLabels = topEntries.map(([key]) => {
+        const [type, id] = key.split(':');
+        const list = productsCache[type] || [];
+        const found = list.find(p => String(p.id) === id);
+        return found ? found.title : key;
+      });
+      const topValues = topEntries.map(([,v]) => v);
+
+      const topCtx = document.getElementById('ov-top-chart');
+      if(topChart) topChart.destroy();
+      if(typeof Chart !== 'undefined' && topCtx){
+        topChart = new Chart(topCtx, {
+          type: 'doughnut',
+          data: {
+            labels: topLabels.length ? topLabels : ['لسه مفيش مبيعات'],
+            datasets: [{
+              data: topValues.length ? topValues : [1],
+              backgroundColor: ['#7C6CF6','#FF9A5A','#5B6EF5','#A79CFF','#3FA65A','#F472B6'],
+              borderColor: '#0B0E1D', borderWidth: 2
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 10 }, boxWidth: 10 } } }
+          }
+        });
+      }
+    }
+
+    reloadHandlers['overview'] = load;
+    window.__loadOverview = load;
+  })();
+
+  // ---------------- Support & Notifications panel ----------------
+  (function initSupport(){
+    const notifForm = document.getElementById('notif-form');
+    const notifList = document.getElementById('notif-list');
+    const notifEmpty = document.getElementById('notif-empty');
+    const notifCount = document.getElementById('notif-count');
+
+    const qList = document.getElementById('questions-list');
+    const qEmpty = document.getElementById('questions-empty');
+    const qCount = document.getElementById('q-count');
+
+    async function loadNotifications(){
+      const { data, error } = await sb.from('notifications').select('*').order('created_at', { ascending: false });
+      if(error){ showError('حصل خطأ في تحميل الإشعارات: ' + error.message); return; }
+      const list = data || [];
+      notifCount.textContent = list.length;
+      if(list.length === 0){ notifList.innerHTML=''; notifEmpty.classList.remove('hidden'); return; }
+      notifEmpty.classList.add('hidden');
+      notifList.innerHTML = list.map(n => `
+        <div class="flex items-start justify-between gap-3 bg-slate-900/60 border border-slate-800 rounded-lg px-4 py-3">
+          <div class="min-w-0">
+            <div class="text-sm font-semibold">${escapeHtml(n.title)}</div>
+            <div class="text-xs text-slate-400 mt-0.5">${escapeHtml(n.message)}</div>
+            <div class="text-[11px] text-slate-600 mt-1">${formatDate(n.created_at)}</div>
+          </div>
+          <button class="notif-delete-btn text-rose-400 hover:text-rose-300 text-xs font-semibold flex-shrink-0" data-id="${n.id}">حذف</button>
+        </div>`).join('');
+    }
+
+    notifForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const title = document.getElementById('notif-title').value.trim();
+      const message = document.getElementById('notif-message').value.trim();
+      const btn = document.getElementById('notif-submit');
+      btn.disabled = true; btn.textContent = 'جاري الإرسال...';
+      const { error } = await sb.from('notifications').insert({ title, message });
+      btn.disabled = false; btn.textContent = 'إرسال للكل';
+      if(error){ showError('فشل إرسال الإشعار: ' + error.message); return; }
+      notifForm.reset();
+      await loadNotifications();
+    });
+
+    notifList.addEventListener('click', async (e) => {
+      if(!e.target.classList.contains('notif-delete-btn')) return;
+      if(!confirm('تمسح الإشعار ده؟')) return;
+      const { error } = await sb.from('notifications').delete().eq('id', e.target.dataset.id);
+      if(error){ showError('فشل الحذف: ' + error.message); return; }
+      await loadNotifications();
+    });
+
+    async function loadQuestions(){
+      const { data, error } = await sb.from('support_questions').select('*').order('created_at', { ascending: false });
+      if(error){
+        qList.innerHTML = '';
+        qEmpty.classList.remove('hidden');
+        qEmpty.textContent = 'لسه جدول الأسئلة مش متظبط في Supabase، أو مفيش أسئلة لسه.';
+        return;
+      }
+      const list = data || [];
+      qCount.textContent = list.length;
+      if(list.length === 0){
+        qList.innerHTML = '';
+        qEmpty.textContent = 'لسه مفيش أسئلة من الطلاب';
+        qEmpty.classList.remove('hidden');
+        return;
+      }
+      qEmpty.classList.add('hidden');
+      qList.innerHTML = list.map(q => `
+        <div class="bg-slate-900/60 border border-slate-800 rounded-lg p-4" data-id="${q.id}">
+          <div class="text-xs text-slate-500 mb-1">${escapeHtml(q.student_email)} — ${formatDate(q.created_at)}</div>
+          <div class="text-sm mb-3">${escapeHtml(q.question)}</div>
+          <textarea class="q-reply-input w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm mb-2" rows="2" placeholder="اكتب ردك هنا...">${escapeHtml(q.admin_reply)}</textarea>
+          <button class="q-reply-btn px-3 py-1.5 rounded-lg text-xs bg-violet-500 hover:bg-violet-600 font-semibold">${q.admin_reply ? 'تحديث الرد' : 'إرسال الرد'}</button>
+        </div>`).join('');
+    }
+
+    qList.addEventListener('click', async (e) => {
+      if(!e.target.classList.contains('q-reply-btn')) return;
+      const card = e.target.closest('[data-id]');
+      const id = card.dataset.id;
+      const reply = card.querySelector('.q-reply-input').value.trim();
+      e.target.disabled = true; e.target.textContent = 'جاري الحفظ...';
+      const { error } = await sb.from('support_questions').update({ admin_reply: reply }).eq('id', id);
+      e.target.disabled = false;
+      if(error){ showError('فشل حفظ الرد: ' + error.message); return; }
+      await loadQuestions();
+    });
+
+    async function load(){
+      clearError();
+      await Promise.all([loadNotifications(), loadQuestions()]);
+    }
+
+    reloadHandlers['support'] = load;
+    window.__loadSupport = load;
+  })();
+
+  // ---------------- Settings panel ----------------
+  (function initSettings(){
+    const form = document.getElementById('password-form');
+    const statusEl = document.getElementById('password-status');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const p1 = document.getElementById('new-password').value;
+      const p2 = document.getElementById('confirm-password').value;
+      statusEl.classList.remove('hidden');
+      if(p1 !== p2){
+        statusEl.textContent = 'كلمتا المرور مش متطابقتين.';
+        statusEl.className = 'text-sm text-rose-400';
+        return;
+      }
+      const btn = document.getElementById('password-submit');
+      btn.disabled = true; btn.textContent = 'جاري الحفظ...';
+      const { error } = await sb.auth.updateUser({ password: p1 });
+      btn.disabled = false; btn.textContent = 'حفظ كلمة المرور';
+      if(error){
+        statusEl.textContent = 'فشل التغيير: ' + error.message;
+        statusEl.className = 'text-sm text-rose-400';
+        return;
+      }
+      statusEl.textContent = 'تم تغيير كلمة المرور بنجاح.';
+      statusEl.className = 'text-sm text-emerald-400';
+      form.reset();
+    });
+  })();
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.tab).classList.add('active');
+      clearError();
+      if(btn.dataset.tab === 'courses-panel') coursesPanel.load();
+      if(btn.dataset.tab === 'books-panel') booksPanel.load();
+      if(btn.dataset.tab === 'categories-panel') window.__loadCategories();
+      if(btn.dataset.tab === 'orders-panel') window.__loadOrders();
+      if(btn.dataset.tab === 'overview-panel') window.__loadOverview();
+      if(btn.dataset.tab === 'support-panel') window.__loadSupport();
+    });
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', async () => {
+    await sb.auth.signOut();
+    window.location.href = 'admin-login.html';
+  });
+
+  (async function init(){
+    const { data } = await sb.auth.getSession();
+    if(!data.session){
+      window.location.href = 'admin-login.html';
+      return;
+    }
+
+    // Probe: only real admins can select from customers (per RLS policy).
+    // A non-admin logged-in visitor will get a permission error here.
+    const probe = await sb.from('customers').select('id').limit(1);
+    if(probe.error){
+      document.getElementById('auth-gate').innerHTML =
+        '<div class="text-center px-6"><p class="text-rose-400 font-bold mb-2">مفيش صلاحية وصول</p>' +
+        '<p class="text-slate-500 text-sm mb-4">الحساب ده مش مسجل كأدمن.</p>' +
+        '<button id="gate-logout" class="text-sm text-slate-400 underline">تسجيل الخروج</button></div>';
+      document.getElementById('gate-logout').addEventListener('click', async () => {
+        await sb.auth.signOut();
+        window.location.href = 'admin-login.html';
+      });
+      return;
+    }
+
+    document.getElementById('admin-email').textContent = data.session.user.email;
+    document.getElementById('auth-gate').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    await Promise.all([loadCategoriesCache(), loadProductsCache()]);
+    window.__loadCustomers();
+    window.__loadOverview();
+  })();
+
+  sb.auth.onAuthStateChange((event) => {
+    if(event === 'SIGNED_OUT') window.location.href = 'admin-login.html';
+  });
+</script>
+</body>
+</html>
